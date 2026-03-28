@@ -1,6 +1,6 @@
 {
-  "name": "Meine Filmdatenbank",
-  "short_name": "Filme",
+  "name": "Meine Datenbank",
+  "short_name": "Datenbank",
   "description": "Meine persönliche Film- und Seriensammlung",
   "start_url": "./index.html",
   "display": "fullscreen",
