@@ -15,9 +15,9 @@
 <style>
 :root{--bg-deep:#07070b;--bg-primary:#0a0a0f;--bg-card:#111118;--bg-card-hover:#17171f;--bg-surface:#1a1a24;--gold:#d4af57;--gold-dim:#a88a3e;--gold-glow:rgba(212,175,87,0.15);--gold-glow-strong:rgba(212,175,87,0.3);--text-primary:#e8e4dc;--text-secondary:#8a8690;--text-muted:#5a5660;--accent-green:#4a9e6a;--accent-blue:#4a7ec9;--border:rgba(212,175,87,0.08);--border-hover:rgba(212,175,87,0.2);--radius:12px;--radius-sm:8px;--shadow:0 4px 24px rgba(0,0,0,0.4);--shadow-lg:0 8px 48px rgba(0,0,0,0.6);--font-display:'Playfair Display',Georgia,serif;--font-body:'Outfit',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--bg-deep);color:var(--text-primary);font-family:var(--font-body);font-weight:400;line-height:1.5;overflow-x:hidden;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
+html,body{background:#000;color:var(--text-primary);font-family:var(--font-body);font-weight:400;line-height:1.5;overflow-x:hidden;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px}
-.app{min-height:100vh;padding-bottom:30px}
+.app{min-height:100vh;min-height:100dvh;padding-bottom:30px;padding-top:env(safe-area-inset-top,0);background:var(--bg-deep)}
 
 /* Banner */
 .home-banner{width:100%;height:240px;position:relative;overflow:hidden;background:var(--bg-card)}
@@ -62,15 +62,15 @@ html,body{background:var(--bg-deep);color:var(--text-primary);font-family:var(--
 
 /* Mode Toggle (Filme/Serien) */
 .mode-toggle{display:flex;justify-content:center;gap:10px;margin-bottom:22px}
-.mode-btn{padding:10px 22px;border-radius:28px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:var(--text-secondary);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.3s;letter-spacing:0.3px;backdrop-filter:blur(4px)}
+.mode-btn{padding:11px 24px;border-radius:28px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:var(--text-secondary);font-family:var(--font-display);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;letter-spacing:1px}
 .mode-btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:var(--text-primary)}
 .mode-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:var(--bg-deep);border-color:transparent;box-shadow:0 4px 20px var(--gold-glow)}
 
 /* Filter Tabs */
 .filter-tabs{display:flex;gap:10px;margin-bottom:20px;padding:0 4px}
-.filter-tab{padding:9px 22px;border-radius:24px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text-secondary);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.25s}
+.filter-tab{padding:10px 24px;border-radius:24px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text-secondary);font-family:var(--font-display);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.25s;letter-spacing:0.8px}
 .filter-tab:hover{border-color:rgba(255,255,255,0.12);color:var(--text-primary)}
-.filter-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:var(--bg-deep);border-color:transparent;font-weight:600;box-shadow:0 2px 12px var(--gold-glow)}
+.filter-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:var(--bg-deep);border-color:transparent;font-weight:700;box-shadow:0 2px 12px var(--gold-glow)}
 
 /* Collection Grid */
 .collection-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px}
@@ -287,47 +287,56 @@ html,body{background:var(--bg-deep);color:var(--text-primary);font-family:var(--
     <div style="padding:28px 20px 0 20px;margin-bottom:16px">
       <!-- Row 1: "Meine Sammlung" centered, clickable as home -->
       <div style="text-align:center;margin-bottom:12px">
-        <div id="homeTitle" onclick="switchTab('collection')" style="font-family:var(--font-display);font-weight:900;font-size:28px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;text-shadow:0 0 40px var(--gold-glow-strong),0 2px 8px rgba(0,0,0,0.5);position:relative;display:inline-block;cursor:pointer;transition:all 0.3s;padding:0 8px">
+        <div id="homeTitle" onclick="switchTab('collection')" style="font-family:var(--font-display);font-weight:900;font-size:34px;color:var(--gold);letter-spacing:5px;text-transform:uppercase;text-shadow:0 0 40px var(--gold-glow-strong),0 2px 8px rgba(0,0,0,0.5);position:relative;display:inline-block;cursor:pointer;transition:all 0.3s;padding:0 8px">
           <span style="background:linear-gradient(180deg,#f0d078,#c9982e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">MEINE SAMMLUNG</span>
-          <div style="position:absolute;bottom:-6px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)"></div>
+          <div style="position:absolute;bottom:-6px;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)"></div>
         </div>
       </div>
-      <!-- Row 2: Counter, pushed further right -->
-      <div id="collectionCounter" style="margin-bottom:16px;padding-left:40px"><span id="counterNumber" style="font-family:var(--font-display);font-weight:900;font-size:30px;color:var(--gold);text-shadow:0 0 14px var(--gold-glow)"></span> <span id="counterLabel" style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--gold);text-shadow:0 0 10px var(--gold-glow)"></span></div>
-      <!-- Row 3: Mode toggle (redesigned) -->
-      <div class="mode-toggle" id="modeToggle" style="margin-bottom:14px">
+      <!-- Row 2: Counter -->
+      <div id="collectionCounter" style="margin-bottom:12px;padding-left:40px"><span id="counterNumber" style="font-family:var(--font-display);font-weight:900;font-size:30px;color:var(--gold);text-shadow:0 0 14px var(--gold-glow)"></span> <span id="counterLabel" style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--gold);text-shadow:0 0 10px var(--gold-glow)"></span></div>
+      <!-- Row 3: Mode toggle -->
+      <div class="mode-toggle" id="modeToggle" style="margin-bottom:14px;flex-wrap:wrap">
         <button class="mode-btn active" data-mode="movies">
-          <span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg> Filme</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg> Filme</span>
         </button>
         <button class="mode-btn" data-mode="series">
-          <span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg> Serien</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg> Serien</span>
         </button>
         <button class="mode-btn" data-mode="games">
-          <span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="6"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="10" r="0.5" fill="currentColor"/><circle cx="17" cy="12" r="0.5" fill="currentColor"/></svg> Games</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="6"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="10" r="0.5" fill="currentColor"/><circle cx="17" cy="12" r="0.5" fill="currentColor"/></svg> Games</span>
+        </button>
+        <button class="mode-btn" data-mode="music">
+          <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> Musik</span>
         </button>
       </div>
-      <!-- Row 4: Filter tabs (redesigned) -->
+      <!-- Row 4: Filter tabs -->
       <div class="filter-tabs" id="collectionFilters" style="justify-content:center;margin-bottom:0">
         <button class="filter-tab active" data-filter="seen">
-          <span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Gesehen</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;letter-spacing:0.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Gesehen</span>
         </button>
         <button class="filter-tab" data-filter="watchlist">
-          <span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Watchlist</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;letter-spacing:0.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Watchlist</span>
         </button>
       </div>
     </div>
     <div style="padding:0 76px 0 20px">
-      <!-- Row 5: Sort left + Search right, flush with covers -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <button onclick="document.getElementById('sortMenu').style.display='block'" style="display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:20px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:var(--font-body);font-size:14px;cursor:pointer">☰ <span id="sortLabel">A → Z</span></button>
-        <div style="position:relative;width:180px">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none">🔍</span>
-          <input type="text" id="collectionSearch" placeholder="Suchen..." autocomplete="off" oninput="filterCollection()" onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v)handleSearch(v)}" style="width:100%;padding:10px 14px 10px 34px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;color:var(--text-primary);font-family:var(--font-body);font-size:14px;outline:none">
+      <!-- Row 5: Sort left ... Random + Search + Clear right -->
+      <div style="display:flex;align-items:center;margin-bottom:14px;gap:8px">
+        <button onclick="document.getElementById('sortMenu').style.display='block'" style="display:flex;align-items:center;gap:6px;padding:12px 20px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;flex-shrink:0">☰ <span id="sortLabel">A → Z</span></button>
+        <div style="flex:1"></div>
+        <button onclick="showRandomSuggestion()" id="randomBtn" style="display:none;width:42px;height:42px;border-radius:10px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;margin-right:4px" title="Zufälliger Vorschlag">
+          <img src="icon-random.png" alt="?" style="width:38px;height:38px;object-fit:contain" onerror="this.outerHTML='<div style=width:38px;height:38px;border-radius:8px;background:%23c98a2e;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:white;font-family:sans-serif;box-shadow:inset_0_-2px_0_%23a06a1a>?</div>'">
+        </button>
+        <div style="position:relative;width:200px;flex-shrink:0">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;pointer-events:none">🔍</span>
+          <input type="text" id="collectionSearch" placeholder="Suchen..." autocomplete="off" oninput="filterCollection();updateClearBtn()" onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v)handleSearch(v)}" style="width:100%;padding:12px 34px 12px 38px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:22px;color:var(--text-primary);font-family:var(--font-body);font-size:15px;outline:none">
+          <button id="searchClear" onclick="document.getElementById('collectionSearch').value='';filterCollection();updateClearBtn()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;border:none;background:#c94040;color:white;font-size:14px;cursor:pointer;padding:0;line-height:24px">✕</button>
         </div>
       </div>
       <!-- Sort menu -->
       <div id="sortMenu" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;background:rgba(0,0,0,0.5)" onclick="this.style.display='none'">
         <div style="position:absolute;top:80px;left:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:4px 0;min-width:150px;box-shadow:var(--shadow-lg)" onclick="event.stopPropagation()">
+          <button onclick="setSort('favorites')" style="width:100%;padding:10px 14px;border:none;background:none;color:#e04060;font-family:var(--font-body);font-size:13px;cursor:pointer;text-align:left">❤️ Favoriten</button>
           <button onclick="setSort('alpha')" style="width:100%;padding:10px 14px;border:none;background:none;color:var(--text-primary);font-family:var(--font-body);font-size:13px;cursor:pointer;text-align:left">A → Z</button>
           <button onclick="setSort('alpha-desc')" style="width:100%;padding:10px 14px;border:none;background:none;color:var(--text-primary);font-family:var(--font-body);font-size:13px;cursor:pointer;text-align:left">Z → A</button>
           <button onclick="setSort('rating')" style="width:100%;padding:10px 14px;border:none;background:none;color:var(--text-primary);font-family:var(--font-body);font-size:13px;cursor:pointer;text-align:left">⭐ Bewertung</button>
@@ -365,28 +374,17 @@ html,body{background:var(--bg-deep);color:var(--text-primary);font-family:var(--
       <button class="settings-btn" onclick="document.getElementById('importFile').click()" style="flex:1;justify-content:center;margin:0">📥 Import (JSON)</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
-    <div id="lastExportInfo" style="font-size:15px;color:var(--gold-dim);margin-bottom:18px;font-weight:500"></div>
+    <div id="lastExportInfo" style="font-size:13px;color:var(--gold-dim);margin-bottom:14px;font-weight:500"></div>
     <button class="settings-btn" onclick="startSwipeMode()" style="margin:0 0 4px">▶️ Film-Checker</button>
-    <div id="swipeProgress" style="font-size:14px;color:var(--gold);margin-bottom:18px;font-weight:500"></div>
-    <div style="margin-bottom:18px">
-      <div style="font-size:15px;font-weight:600;color:var(--gold-dim);margin-bottom:10px">🔍 Nochmal prüfen</div>
-      <div id="reviewList" style="max-height:250px;overflow-y:auto"></div>
-      <div id="reviewEmpty" style="font-size:13px;color:var(--text-muted)">Keine Filme zum Prüfen.</div>
-    </div>
-    <button class="settings-btn" onclick="document.getElementById('listFile').click()" style="margin:0 0 18px">📄 Liste laden</button>
+    <div id="swipeProgress" style="font-size:13px;color:var(--gold);margin-bottom:8px;font-weight:500"></div>
+    <button class="settings-btn" onclick="closeSettings();showReviewGrid()" style="margin:0 0 8px">🔍 Nochmal prüfen <span id="reviewCount" style="font-size:12px;color:var(--text-muted)"></span></button>
+    <button class="settings-btn" onclick="document.getElementById('listFile').click()" style="margin:0 0 18px">📄 Liste laden (Textdatei)</button>
     <input type="file" id="listFile" accept=".txt,.csv,.text" style="display:none" onchange="importList(event)">
-    <!-- QR Code / Share -->
+    <!-- Category toggles -->
     <div style="margin-bottom:18px">
-      <div style="font-size:15px;font-weight:600;color:var(--gold-dim);margin-bottom:10px">📱 Auf Tablet/Handy öffnen</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Exportiere deine Daten als JSON, kopiere die HTML-Datei + JSON auf dein Gerät. Öffne die HTML-Datei im Browser (Chrome empfohlen für Sprachsteuerung). Dann importiere die JSON-Datei.</div>
-      <button class="settings-btn" onclick="generateQR()" style="margin:0">📲 QR-Code (aktuelle URL)</button>
-      <div id="qrCodeArea" style="display:none;text-align:center;margin-top:12px;padding:16px;background:white;border-radius:var(--radius)">
-        <canvas id="qrCanvas"></canvas>
-        <div style="font-size:11px;color:#333;margin-top:8px">Scanne den Code mit deinem Tablet</div>
-      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--gold-dim);margin-bottom:10px">📂 Kategorien</div>
+      <div id="categoryToggles"></div>
     </div>
-    <button class="settings-btn" onclick="toggleFullscreen()" style="margin:0 0 8px">🖥️ Vollbildmodus</button>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5">Tipp: In Chrome auf Android kannst du über Menü → „Zum Startbildschirm hinzufügen" die App wie eine echte App im Vollbild nutzen.</div>
   </div>
 </div>
 
@@ -460,7 +458,9 @@ function createCard(item,type){
   const rt=item.vote_average?item.vote_average.toFixed(1):'';
   const title=item.title||item.name;
   const isSeries=type==='tv';
-  return `<div class="movie-card" onclick="${isSeries?`openSeriesDetail(${item.id})`:`openMovieDetail(${item.id})`}"><div class="movie-poster">${item.poster_path?`<img src="${posterUrl(item.poster_path)}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${title}</div>`}${rt?`<div class="rating-badge">★ ${rt}</div>`:''}${isSeries?'<div class="type-badge">SERIE</div>':''}</div><div class="movie-info"><div class="movie-title-text">${title}</div><div class="movie-year">${yr}</div></div></div>`;
+  const inCollection=isSeries?(seriesCollection[item.id]&&(seriesCollection[item.id].watchlist||seriesCollection[item.id].rating>0||(seriesCollection[item.id].episodes&&Object.values(seriesCollection[item.id].episodes).some(v=>v)))):(collection[item.id]&&(collection[item.id].seen||collection[item.id].watchlist));
+  const dot=inCollection?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px;flex-shrink:0;box-shadow:0 0 4px rgba(74,158,106,0.5)"></span>':'';
+  return `<div class="movie-card" onclick="${isSeries?`openSeriesDetail(${item.id})`:`openMovieDetail(${item.id})`}"><div class="movie-poster">${item.poster_path?`<img src="${posterUrl(item.poster_path)}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${title}</div>`}${rt?`<div class="rating-badge">★ ${rt}</div>`:''}${isSeries?'<div class="type-badge">SERIE</div>':''}</div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${title}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
 }
 
 // Search
@@ -493,11 +493,14 @@ async function openMovieDetail(id){
   const mj=JSON.stringify(mi).replace(/'/g,"&#39;"),esc=s=>(s||'').replace(/'/g,"\\'");
   const stars=[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="star ${d.rating>=i?'filled':''}" onclick="rateMovie(${id},${i},this)" data-movie='${mj}'>${d.rating>=i?'★':'☆'}</span>`).join('');
   const rl=d.rating?`<span class="star-rating-label">${d.rating}/10</span>`:'';
+  const heartBtn=`<span onclick="toggleFavorite(${id},this);event.stopPropagation()" style="cursor:pointer;font-size:24px;margin-left:10px;color:${d.favorite?'#e04060':'#555'};transition:all 0.2s">❤</span>`;
+  // Save genres for random suggestion filter
+  if(mv.genres?.length){const gd=getMovieData(id);gd.genres=(mv.genres||[]).map(g=>g.name);setMovieData(id,gd)}
   content.innerHTML=`<div class="modal-backdrop">${mv.backdrop_path?`<img src="${posterUrl(mv.backdrop_path,'w780')}">`:mv.poster_path?`<img src="${posterUrl(mv.poster_path,'w780')}" style="filter:blur(8px) brightness(0.4)">`:''}
     <button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="modal-movie-title">${mv.title}</div>
     <div class="modal-meta">${yr?`<span>${yr}</span>`:''}${rt?`<span>${rt}</span>`:''}${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
-    <div class="star-rating">${stars}${rl}</div>
+    <div class="star-rating">${stars}${rl}${heartBtn}</div>
     <div class="action-row">
       <button class="action-btn seen ${d.seen?'active':''}" onclick="toggleSeen(${id},this,'${esc(mi.title)}','${mi.poster_path}','${mi.release_date}',${mi.vote_average})">✓ Gesehen</button>
       <button class="action-btn watchlist ${d.watchlist?'active':''}" onclick="toggleWatchlist(${id},this,'${esc(mi.title)}','${mi.poster_path}','${mi.release_date}',${mi.vote_average})">📌 Watchlist</button>
@@ -525,8 +528,9 @@ async function openSeriesDetail(id){
   const esc=s=>(s||'').replace(/'/g,"\\'");
   const sij=JSON.stringify(si).replace(/'/g,"&#39;");
   const stars=[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="star ${d.rating>=i?'filled':''}" onclick="rateSeries(${id},${i},this)" data-series='${sij}'>${d.rating>=i?'★':'☆'}</span>`).join('');
-  const rl=d.rating?`<span class="star-rating-label">${d.rating}/10</span>`:'';
-
+  const rl2=d.rating?`<span class="star-rating-label">${d.rating}/10</span>`:'';
+  const heartBtnS=`<span onclick="toggleSeriesFavorite(${id},this);event.stopPropagation()" style="cursor:pointer;font-size:24px;margin-left:10px;color:${d.favorite?'#e04060':'#555'};transition:all 0.2s">❤</span>`;
+  if(tv.genres?.length){d.genres=(tv.genres||[]).map(g=>g.name);setSeriesData(id,d)}
   let seasonsHtml=seasons.map(s=>{
     const eps=d.episodes||{};
     const watchedInSeason=Object.keys(eps).filter(k=>k.startsWith(`s${s.season_number}e`)&&eps[k]).length;
@@ -540,7 +544,7 @@ async function openSeriesDetail(id){
     <button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="modal-movie-title">${tv.name}</div>
     <div class="modal-meta">${yr?`<span>Seit ${yr}</span>`:''}${seasons.length?`<span>${seasons.length} Staffeln</span>`:''}${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
-    <div class="star-rating">${stars}${rl}</div>
+    <div class="star-rating">${stars}${rl2}${heartBtnS}</div>
     <div class="action-row">
       <button class="action-btn watchlist ${d.watchlist?'active':''}" onclick="toggleSeriesWatchlist(${id},this,'${esc(si.name)}','${si.poster_path}','${si.first_air_date}',${si.vote_average},${si.seasons})">📌 Watchlist</button>
     </div>
@@ -612,16 +616,74 @@ document.getElementById('movieModal').addEventListener('click',e=>{if(e.target==
 
 // Actions
 function mki(id,t,p,d,r){return{id,title:t,poster_path:p,release_date:d,vote_average:r||0,type:'movie'}}
-function toggleSeen(id,btn,t,p,d,r){const x=getMovieData(id);x.seen=!x.seen;if(x.seen)x.watchlist=false;x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');
-  // Also update watchlist button in same modal
+function removeFromReviewById(id){
+  let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  const before=rl.length;
+  rl=rl.filter(m=>m.id!==id);
+  if(rl.length!==before)localStorage.setItem('filmothek_review',JSON.stringify(rl));
+}
+function toggleSeen(id,btn,t,p,d,r){const x=getMovieData(id);x.seen=!x.seen;if(x.seen){x.watchlist=false;removeFromReviewById(id)}x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');
   const wlBtn=btn.parentElement.querySelector('.action-btn.watchlist');
   if(wlBtn&&x.seen)wlBtn.classList.remove('active');
   showToast(x.seen?`"${t}" gesehen`:`"${t}" nicht gesehen`)}
-function toggleWatchlist(id,btn,t,p,d,r){const x=getMovieData(id);x.watchlist=!x.watchlist;x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');showToast(x.watchlist?`"${t}" auf Watchlist`:`"${t}" entfernt`)}
+function toggleWatchlist(id,btn,t,p,d,r){const x=getMovieData(id);x.watchlist=!x.watchlist;if(x.watchlist)removeFromReviewById(id);x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');showToast(x.watchlist?`"${t}" auf Watchlist`:`"${t}" entfernt`)}
 function toggleSeriesWatchlist(id,btn,name,poster,date,rating,seasons){
   const d=getSeriesData(id);d.watchlist=!d.watchlist;
   d.seriesInfo={id,name,poster_path:poster,first_air_date:date,vote_average:rating||0,type:'series',seasons};
   setSeriesData(id,d);btn.classList.toggle('active');showToast(d.watchlist?`"${name}" auf Watchlist`:`"${name}" entfernt`);
+}
+function toggleFavorite(id,el){
+  const d=getMovieData(id);d.favorite=!d.favorite;setMovieData(id,d);
+  el.style.color=d.favorite?'#e04060':'#555';
+  showToast(d.favorite?'❤️ Favorit!':'Favorit entfernt');
+}
+function toggleSeriesFavorite(id,el){
+  const d=getSeriesData(id);d.favorite=!d.favorite;setSeriesData(id,d);
+  el.style.color=d.favorite?'#e04060':'#555';
+  showToast(d.favorite?'❤️ Favorit!':'Favorit entfernt');
+}
+function getFilteredItems(){
+  const f=document.querySelector('#collectionFilters .filter-tab.active')?.dataset.filter;
+  let items=[];
+  if(collectionMode==='movies'){
+    items=Object.entries(collection).filter(([,d])=>{
+      if(!d.movieInfo)return false;
+      if(f==='watchlist')return d.watchlist;
+      if(f==='seen')return d.seen;
+      return false;
+    }).map(([,d])=>d);
+  }else if(collectionMode==='series'){
+    items=Object.entries(seriesCollection).filter(([,d])=>{
+      if(!d.seriesInfo)return false;
+      if(f==='watchlist')return d.watchlist;
+      if(f==='seen')return d.episodes&&Object.values(d.episodes).some(v=>v);
+      return false;
+    }).map(([,d])=>d);
+  }
+  return items;
+}
+
+function showRandomSuggestion(){
+  const items=getFilteredItems();
+  if(!items.length){showToast('Nichts vorhanden');return}
+  
+  const pick=items[Math.floor(Math.random()*items.length)];
+  const info=pick.movieInfo||pick.seriesInfo;if(!info)return;
+  const title=info.title||info.name;
+  const yr=(info.release_date||info.first_air_date||'').split('-')[0];
+  const isS=!!pick.seriesInfo;
+  
+  const grid=document.getElementById('collectionGrid');
+  const seriesList=document.getElementById('seriesListView');
+  grid.style.display='';seriesList.style.display='none';
+  
+  grid.innerHTML=`<div style="display:flex;justify-content:center"><div class="collection-item" onclick="${isS?`openSeriesDetail(${info.id})`:`openMovieDetail(${info.id})`}" style="width:180px">
+    <div class="collection-poster" style="border-color:var(--gold)">${info.poster_path?`<img src="${posterUrl(info.poster_path,'w342')}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">${title}</div>`}</div>
+    <div class="collection-info" style="text-align:center">
+      <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
+      <div class="collection-year">${yr}</div>
+    </div></div></div>`;
+  setupScrollingTitles();
 }
 function rateMovie(id,r,el){const mi=JSON.parse(el.dataset.movie||'{}'),d=getMovieData(id);d.rating=d.rating===r?0:r;d.movieInfo=mi;setMovieData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();if(d.rating)showToast(`${d.rating}/10`)}
 function rateSeries(id,r,el){const si=JSON.parse(el.dataset.series||'{}'),d=getSeriesData(id);d.rating=d.rating===r?0:r;d.seriesInfo=si;setSeriesData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();if(d.rating)showToast(`${d.rating}/10`)}
@@ -637,10 +699,11 @@ function getSeriesProgress(d){
 }
 
 let currentSort='alpha';
-const sortLabels={alpha:'A → Z','alpha-desc':'Z → A',rating:'⭐ Bewertung',year:'📅 Neueste',  'year-asc':'📅 Älteste'};
+const sortLabels={favorites:'❤️ Favoriten',alpha:'A → Z','alpha-desc':'Z → A',rating:'⭐ Bewertung',year:'📅 Neueste','year-asc':'📅 Älteste'};
 function setSort(s){currentSort=s;document.getElementById('sortMenu').style.display='none';document.getElementById('sortLabel').textContent=sortLabels[s]||s;const f=document.querySelector('#collectionFilters .filter-tab.active')?.dataset.filter||'seen';renderCollection(f)}
 
 function filterCollection(){const f=document.querySelector('#collectionFilters .filter-tab.active')?.dataset.filter||'seen';renderCollection(f)}
+function updateClearBtn(){const v=document.getElementById('collectionSearch')?.value||'';document.getElementById('searchClear').style.display=v.length?'block':'none'}
 
 function sortItems(items,isMovie){
   function getBase(t){
@@ -673,6 +736,7 @@ function sortItems(items,isMovie){
         const cmp=bBase.localeCompare(aBase,'de');
         return cmp||by-ay;
       }
+      case 'favorites':return(b.favorite?1:0)-(a.favorite?1:0)||(b.rating||0)-(a.rating||0)||(at.localeCompare(bt,'de'));
       case 'rating':return(b.rating||0)-(a.rating||0)||(at.localeCompare(bt,'de'))||ay-by;
       case 'year':return by-ay||(at.localeCompare(bt,'de'));
       case 'year-asc':return ay-by||(at.localeCompare(bt,'de'));
@@ -686,16 +750,83 @@ function renderCollection(f='all'){
   const seriesList=document.getElementById('seriesListView');
   const gamesView=document.getElementById('gamesView');
   const empty=document.getElementById('collectionEmpty');
+  // Show random button only on watchlist
+  const rb=document.getElementById('randomBtn');
+  if(rb)rb.style.display=((f==='watchlist'||f==='seen')&&(collectionMode==='movies'||collectionMode==='series'))?'':'none';
 
   grid.style.display='none';seriesList.style.display='none';gamesView.style.display='none';
   const counterNum=document.getElementById('counterNumber');
   const counterLbl=document.getElementById('counterLabel');
-  function setCounter(num,label){counterNum.textContent=num;counterLbl.textContent=label}
+  function setCounter(num,label){counterNum.textContent=num;counterLbl.textContent=' '+label}
 
   if(collectionMode==='games'){
     gamesView.style.display='block';
-    gamesView.innerHTML='<div class="empty-state"><div class="empty-icon">🎮</div><p>Games kommen bald!<br>Hier kannst du bald deine Spiele verwalten.</p></div>';
-    empty.style.display='none';setCounter('','');
+    const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+    const allGames=Object.values(gamesCol);
+    
+    if(f==='pc'){
+      // Show PC games
+      const pcGames=allGames.filter(g=>g.platform==='PC');
+      setCounter(pcGames.length,'PC Games');
+      if(!pcGames.length){
+        gamesView.innerHTML='<div class="empty-state"><div class="empty-icon">💻</div><p>Keine PC-Spiele.<br>Lade eine Liste mit Spielname\\PC</p></div>';
+      }else{
+        gamesView.innerHTML=`<div class="collection-grid">${pcGames.map(g=>`<div class="collection-item"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+        setupScrollingTitles();
+      }
+    }else{
+      // Show console selector or filtered console games
+      const consoleCats=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
+      // Grouped by manufacturer: PlayStation, Xbox, Nintendo, Sega, Atari
+      const consoles=[
+        {id:'ps1',name:'PlayStation 1'},{id:'ps2',name:'PlayStation 2'},{id:'ps3',name:'PlayStation 3'},
+        {id:'ps4',name:'PlayStation 4'},{id:'ps5',name:'PlayStation 5'},
+        {id:'psp',name:'PSP'},{id:'vita',name:'PS Vita'},
+        {id:'xbox360',name:'Xbox 360'},{id:'xboxone',name:'Xbox One'},{id:'xboxsx',name:'Xbox Series X'},
+        {id:'snes',name:'Super Nintendo'},{id:'n64',name:'Nintendo 64'},{id:'gamecube',name:'GameCube'},
+        {id:'wii',name:'Nintendo Wii'},{id:'wiiu',name:'Wii U'},
+        {id:'gameboy',name:'Game Boy'},{id:'gba',name:'Game Boy Advance'},
+        {id:'ds',name:'Nintendo DS'},{id:'3ds',name:'Nintendo 3DS'},
+        {id:'switch',name:'Nintendo Switch'},
+        {id:'megadrive',name:'Sega Mega Drive'},{id:'saturn',name:'Sega Saturn'},{id:'dreamcast',name:'Dreamcast'},
+        {id:'atari',name:'Atari'}
+      ].filter(c=>consoleCats[c.id]!==false);
+      
+      // Check if a specific console is selected
+      const selectedConsole=document.getElementById('gamesView')?.dataset?.console;
+      if(selectedConsole){
+        const cName=consoles.find(c=>c.id===selectedConsole)?.name||selectedConsole;
+        const cGames=allGames.filter(g=>g.platform===cName);
+        setCounter(cGames.length,cName);
+        let backBtn=`<div style="margin-bottom:12px"><button onclick="document.getElementById('gamesView').dataset.console='';renderCollection('console')" style="padding:8px 16px;border-radius:18px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:var(--font-body);font-size:13px;cursor:pointer">← Alle Konsolen</button></div>`;
+        if(!cGames.length){
+          gamesView.innerHTML=backBtn+`<div class="empty-state"><div class="empty-icon">🎮</div><p>Keine ${cName}-Spiele.<br>Lade eine Liste mit Spielname\\${selectedConsole}</p></div>`;
+        }else{
+          gamesView.innerHTML=backBtn+`<div class="collection-grid">${cGames.map(g=>`<div class="collection-item"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+          setupScrollingTitles();
+        }
+      }else{
+        // Show console grid
+        const totalGames=allGames.filter(g=>g.platform!=='PC').length;
+        setCounter(totalGames,'Konsolen-Spiele');
+        gamesView.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px">${consoles.map(c=>{
+          const count=allGames.filter(g=>g.platform===c.name).length;
+          return `<div onclick="document.getElementById('gamesView').dataset.console='${c.id}';renderCollection('console')" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 10px 14px;text-align:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border)'">
+            <img src="icon-${c.id}.png" alt="${c.name}" style="width:64px;height:64px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:32px;margin-bottom:8px">🎮</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3">${c.name}</div>
+            ${count?`<div style="font-size:10px;color:var(--gold-dim);margin-top:4px">${count} Spiele</div>`:''}
+          </div>`;
+        }).join('')}</div>`;
+      }
+    }
+    empty.style.display='none';
+    return;
+  }
+  if(collectionMode==='music'){
+    gamesView.style.display='block';
+    const cat=f==='soundtracks'?'Soundtracks':'Alben';
+    gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>${cat}<br>Lade eine Liste, um Musik hinzuzufügen.</p></div>`;
+    empty.style.display='none';setCounter('0','Musik');
     return;
   }
 
@@ -713,12 +844,13 @@ function renderCollection(f='all'){
       const info=d.movieInfo;if(!info)return'';
       const title=info.title;const yr=(info.release_date||'').split('-')[0];
       const ms=d.rating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${d.rating>=i?'filled':''}">★</span>`).join(''):'';
+      const heart=d.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤️</span>':'';
       return `<div class="collection-item" onclick="openMovieDetail(${info.id})">
         <div class="collection-poster">${info.poster_path?`<img src="${posterUrl(info.poster_path,'w342')}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:4px;text-align:center">${title}</div>`}</div>
         <div class="collection-info">
           <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
           <div class="collection-year">${yr}</div>
-          ${ms?`<div class="collection-stars">${ms}</div>`:''}
+          ${ms?`<div class="collection-stars">${ms}${heart}</div>`:(heart?`<div class="collection-stars">${heart}</div>`:'')}
         </div></div>`;
     }).join('');
     setupScrollingTitles();
@@ -737,6 +869,7 @@ function renderCollection(f='all'){
       const s=d.seriesInfo;if(!s)return'';
       const yr=(s.first_air_date||'').split('-')[0];
       const ms=d.rating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${d.rating>=i?'filled':''}">★</span>`).join(''):'';
+      const seriesHeart=d.favorite?'<span style="color:#e04060;font-size:13px;margin-left:4px">❤</span>':'';
       const numSeasons=s.seasons||0;
       const epCounts=s.seasonEpCounts||{};
       let seasonRows='';
@@ -760,7 +893,7 @@ function renderCollection(f='all'){
         <div style="padding:14px 16px 8px;cursor:pointer" onclick="openSeriesDetail(${s.id})">
           <div class="series-card-title">${s.name}</div>
           <div class="series-card-year">${yr} · ${numSeasons} Staffeln</div>
-          ${ms?`<div class="series-card-stars" style="margin-top:4px">${ms}</div>`:''}
+          ${ms?`<div class="series-card-stars" style="margin-top:4px">${ms}${seriesHeart}</div>`:(seriesHeart?`<div class="series-card-stars" style="margin-top:4px">${seriesHeart}</div>`:'')}
         </div>
         <div class="series-card-body">
           <div class="series-card-body-poster" onclick="openSeriesDetail(${s.id})" style="cursor:pointer">${s.poster_path?`<img src="${posterUrl(s.poster_path,'w342')}">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">📺</div>`}</div>
@@ -849,15 +982,39 @@ function setupScrollingTitles(){
 }
 
 // Mode toggle - direct show, no reset
+const gamesPlatforms=['PC','PlayStation 5','PlayStation 4','PlayStation 3','PlayStation 2','PlayStation 1','Xbox Series X','Xbox One','Xbox 360','Nintendo Switch','Nintendo Wii','Super Nintendo','Nintendo 64','Gameboy','Nintendo DS','Nintendo 3DS','PSP','PS Vita','Sega Mega Drive','Atari'];
+const gamesFiltersHtml=`<button class="filter-tab active" data-filter="pc"><span style="display:inline-flex;align-items:center;gap:5px">💻 PC</span></button><button class="filter-tab" data-filter="console"><span style="display:inline-flex;align-items:center;gap:5px">🎮 Konsole</span></button>`;
+const defaultFiltersHtml=`<button class="filter-tab active" data-filter="seen"><span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Gesehen</span></button><button class="filter-tab" data-filter="watchlist"><span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Watchlist</span></button>`;
+const musicFiltersHtml=`<button class="filter-tab active" data-filter="albums"><span style="display:inline-flex;align-items:center;gap:5px">💿 Alben</span></button><button class="filter-tab" data-filter="soundtracks"><span style="display:inline-flex;align-items:center;gap:5px">🎵 Soundtracks</span></button>`;
+const booksFiltersHtml=`<button class="filter-tab active" data-filter="books"><span style="display:inline-flex;align-items:center;gap:5px">📖 Bücher</span></button><button class="filter-tab" data-filter="magazines"><span style="display:inline-flex;align-items:center;gap:5px">📰 Zeitschriften</span></button>`;
+
+function updateFilters(mode){
+  const fc=document.getElementById('collectionFilters');
+  if(mode==='games')fc.innerHTML=gamesFiltersHtml;
+  else if(mode==='music')fc.innerHTML=musicFiltersHtml;
+  else if(mode==='books')fc.innerHTML=booksFiltersHtml;
+  else fc.innerHTML=defaultFiltersHtml;
+}
+
+// Apply category visibility from settings
+function applyCategoryVisibility(){
+  const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
+  document.querySelectorAll('#modeToggle .mode-btn').forEach(btn=>{
+    const mode=btn.dataset.mode;
+    if(cats[mode]===false)btn.style.display='none';
+    else btn.style.display='';
+  });
+}
+
 document.getElementById('modeToggle').addEventListener('click',e=>{
   const btn=e.target.closest('.mode-btn');
   if(!btn)return;
   document.querySelectorAll('#modeToggle .mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   collectionMode=btn.dataset.mode;
-  document.querySelectorAll('#collectionFilters .filter-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector('#collectionFilters .filter-tab[data-filter="seen"]')?.classList.add('active');
-  renderCollection('seen');
+  updateFilters(collectionMode);
+  const firstFilter=document.querySelector('#collectionFilters .filter-tab');
+  if(firstFilter)renderCollection(firstFilter.dataset.filter);
 });
 document.getElementById('collectionFilters').addEventListener('click',e=>{const btn=e.target.closest('.filter-tab');if(!btn)return;document.querySelectorAll('#collectionFilters .filter-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderCollection(btn.dataset.filter)});
 
@@ -882,20 +1039,59 @@ function openSettings(){
   document.getElementById('settingsOverlay').classList.add('open');updateExportInfo();
   const unsorted=Object.entries(collection).filter(([,d])=>d.movieInfo&&!d.seen&&!d.watchlist&&!d.review);
   const sp=document.getElementById('swipeProgress');if(sp)sp.textContent=unsorted.length?`${unsorted.length} Filme noch zu sortieren`:'Keine unsortierten Filme.';
-  // Render review list
+  // Review count
   const rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
-  const rlEl=document.getElementById('reviewList');
-  const reEl=document.getElementById('reviewEmpty');
-  if(rl.length){
-    reEl.style.display='none';
-    rlEl.innerHTML=rl.map(m=>{const t=(m.title||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');const orig=m.originalName&&m.originalName.toLowerCase()!==(m.title||'').toLowerCase()?m.originalName:'';return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div onclick="closeSettings();handleSearch(this.dataset.q)" data-q="${t}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer">
-        <div style="width:40px;height:60px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--bg-surface)">${m.poster_path?`<img src="${posterUrl(m.poster_path,'w92')}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
-        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.title||''}</div>${orig?`<div style="font-size:11px;color:var(--gold-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Liste: ${orig}</div>`:''}<div style="font-size:12px;color:var(--text-muted)">${(m.release_date||'').split('-')[0]}</div></div>
-      </div>
-      <button onclick="deleteFromCollection(${m.id})" style="padding:8px 14px;border-radius:16px;border:1px solid rgba(201,64,64,0.3);background:rgba(201,64,64,0.1);color:#c94040;font-size:14px;cursor:pointer;flex-shrink:0" title="Löschen">🗑️</button>
-    </div>`}).join('');
-  }else{reEl.style.display='';rlEl.innerHTML=''}
+  const rc=document.getElementById('reviewCount');
+  if(rc)rc.textContent=rl.length?`(${rl.length})`:'';
+  // Category toggles
+  const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
+  const ct=document.getElementById('categoryToggles');
+  if(ct){
+    const toggle=(key,label,indent,store)=>{
+      const data=JSON.parse(localStorage.getItem(store)||'{}');
+      const on=data[key]!==false;
+      const pad=indent*18;
+      const sz=indent>1?14:indent?16:20;
+      const fs=indent>1?11:indent?12:14;
+      return `<div onclick="toggleSetting('${store}','${key}')" style="display:flex;align-items:center;gap:8px;padding:${indent>1?'5px':'8px'} 14px ${indent>1?'5px':'8px'} ${14+pad}px;background:${indent?'var(--bg-surface)':'var(--bg-card)'};border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:${indent>1?3:indent?4:6}px;cursor:pointer">
+        <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:2px solid ${on?'var(--accent-green)':'var(--text-muted)'};background:${on?'var(--accent-green)':'transparent'};flex-shrink:0"></div>
+        <span style="font-size:${fs}px;color:${indent?'var(--text-secondary)':'var(--text-primary)'}">${label}</span>
+      </div>`;
+    };
+    
+    let html='';
+    html+=toggle('movies','Filme',0,'filmothek_categories');
+    html+=toggle('series','Serien',0,'filmothek_categories');
+    html+=toggle('games','Games',0,'filmothek_categories');
+    
+    if(cats.games!==false){
+      const cons=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
+      html+=toggle('pc','PC',1,'filmothek_consoles');
+      if(cons.pc!==false){
+        html+=toggle('digital','Digital',2,'filmothek_consoles');
+        html+=toggle('steam','Steam',2,'filmothek_consoles');
+      }
+      html+=toggle('console_all','Konsole',1,'filmothek_consoles');
+      if(cons.console_all!==false){
+        const allConsoles=[
+          ['ps1','PlayStation 1'],['ps2','PlayStation 2'],['ps3','PlayStation 3'],
+          ['ps4','PlayStation 4'],['ps5','PlayStation 5'],
+          ['xbox360','Xbox 360'],['xboxone','Xbox One'],['xboxsx','Xbox Series X'],
+          ['switch','Nintendo Switch'],['wii','Nintendo Wii'],['wiiu','Wii U'],
+          ['snes','Super Nintendo'],['n64','Nintendo 64'],['gamecube','GameCube'],
+          ['gameboy','Game Boy'],['gba','Game Boy Advance'],
+          ['ds','Nintendo DS'],['3ds','Nintendo 3DS'],
+          ['psp','PSP'],['vita','PS Vita'],
+          ['megadrive','Sega Mega Drive'],['dreamcast','Dreamcast'],
+          ['saturn','Sega Saturn'],['atari','Atari']
+        ];
+        allConsoles.forEach(([id,label])=>{html+=toggle(id,label,2,'filmothek_consoles')});
+      }
+    }
+    
+    html+=toggle('music','Musik',0,'filmothek_categories');
+    ct.innerHTML=html;
+  }
 }
 function removeFromReview(id){
   let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
@@ -915,6 +1111,97 @@ function deleteFromCollection(id){
 }
 function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open')}
 function updateExportInfo(){const d=localStorage.getItem('filmothek_lastexport');document.getElementById('lastExportInfo').textContent=d?`Letzter Export: ${d}`:'Noch nie exportiert.'}
+
+function toggleSetting(store,key){
+  const data=JSON.parse(localStorage.getItem(store)||'{}');
+  data[key]=data[key]===false?true:false;
+  localStorage.setItem(store,JSON.stringify(data));
+  if(store==='filmothek_categories')applyCategoryVisibility();
+  openSettings();
+}
+
+// Keep old names for compatibility
+function toggleCategory(mode){toggleSetting('filmothek_categories',mode)}
+function toggleConsole(id){toggleSetting('filmothek_consoles',id)}
+
+function showListInfo(){
+  showToast('Textdatei: Ein Eintrag pro Zeile. Spiele: Name\\Switch oder Name\\PS5. Serien: Name;S03;E05');
+}
+
+let reviewIndex=0;
+
+// Nochmal prüfen als Cover-Grid auf der Hauptseite
+function showReviewGrid(){
+  const rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  if(!rl.length){showToast('Keine Filme zum Prüfen');return}
+  
+  // Zeige im Collection-Bereich an
+  const grid=document.getElementById('collectionGrid');
+  const seriesList=document.getElementById('seriesListView');
+  const gamesView=document.getElementById('gamesView');
+  const empty=document.getElementById('collectionEmpty');
+  grid.style.display='';seriesList.style.display='none';gamesView.style.display='none';empty.style.display='none';
+  
+  const counterNum=document.getElementById('counterNumber');
+  const counterLbl=document.getElementById('counterLabel');
+  counterNum.textContent=rl.length;
+  counterLbl.textContent='zum Prüfen';
+  
+  grid.innerHTML=rl.map((m,idx)=>{
+    const title=m.title||'';
+    const yr=(m.release_date||'').split('-')[0];
+    const orig=m.originalName&&m.originalName.toLowerCase()!==title.toLowerCase()?m.originalName:'';
+    return `<div class="collection-item" style="position:relative">
+      <div class="collection-poster">${m.poster_path?`<img src="${posterUrl(m.poster_path,'w342')}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${title}</div>`}</div>
+      <div class="collection-info">
+        <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
+        <div class="collection-year">${yr}</div>
+        ${orig?`<div style="font-size:10px;color:var(--gold-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Liste: ${orig}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap">
+        <button onclick="reviewAction(${idx},'seen')" style="padding:5px 10px;border-radius:14px;border:1px solid var(--accent-green);background:transparent;color:var(--accent-green);font-size:11px;cursor:pointer;font-family:var(--font-body)">✓ Gesehen</button>
+        <button onclick="reviewAction(${idx},'watchlist')" style="padding:5px 10px;border-radius:14px;border:1px solid var(--accent-blue);background:transparent;color:var(--accent-blue);font-size:11px;cursor:pointer;font-family:var(--font-body)">📌</button>
+        <button onclick="reviewAction(${idx},'search')" style="padding:5px 8px;border-radius:14px;border:1px solid var(--text-muted);background:transparent;color:var(--text-muted);font-size:11px;cursor:pointer">🔍</button>
+        <button onclick="reviewAction(${idx},'delete')" style="padding:5px 8px;border-radius:14px;border:1px solid #c94040;background:transparent;color:#c94040;font-size:11px;cursor:pointer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+  setupScrollingTitles();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function reviewAction(idx,action){
+  let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  if(idx>=rl.length)return;
+  const m=rl[idx];
+  
+  if(action==='seen'){
+    const d=getMovieData(m.id);
+    d.seen=true;d.movieInfo={id:m.id,title:m.title,poster_path:m.poster_path,release_date:m.release_date,vote_average:m.vote_average,type:'movie',originalName:m.originalName};
+    setMovieData(m.id,d);
+    rl.splice(idx,1);
+    localStorage.setItem('filmothek_review',JSON.stringify(rl));
+    showToast(`"${m.title}" → Gesehen`);
+    showReviewGrid();
+  }else if(action==='watchlist'){
+    const d=getMovieData(m.id);
+    d.watchlist=true;d.movieInfo={id:m.id,title:m.title,poster_path:m.poster_path,release_date:m.release_date,vote_average:m.vote_average,type:'movie',originalName:m.originalName};
+    setMovieData(m.id,d);
+    rl.splice(idx,1);
+    localStorage.setItem('filmothek_review',JSON.stringify(rl));
+    showToast(`"${m.title}" → Watchlist`);
+    showReviewGrid();
+  }else if(action==='search'){
+    handleSearch(m.title||m.originalName||'');
+  }else if(action==='delete'){
+    rl.splice(idx,1);
+    localStorage.setItem('filmothek_review',JSON.stringify(rl));
+    delete collection[m.id];save();
+    showToast('Gelöscht');
+    if(rl.length)showReviewGrid();
+    else{showToast('Alle geprüft!');renderCollection('seen')}
+  }
+}
 
 function generateQR(){
   const url=window.location.href;
@@ -943,7 +1230,11 @@ function toggleFullscreen(){
 }
 
 function exportData(){
-  const data={movies:collection,series:seriesCollection,exportDate:new Date().toLocaleString('de-DE'),version:2};
+  const review=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
+  const games=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const consoles=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
+  const data={movies:collection,series:seriesCollection,review:review,categories:cats,games:games,consoles:consoles,exportDate:new Date().toLocaleString('de-DE'),version:4};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`filmothek_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
@@ -959,19 +1250,22 @@ function importData(e){
       const data=JSON.parse(ev.target.result);
       if(data.movies)collection=data.movies;
       if(data.series)seriesCollection=data.series;
+      if(data.review)localStorage.setItem('filmothek_review',JSON.stringify(data.review));
+      if(data.categories)localStorage.setItem('filmothek_categories',JSON.stringify(data.categories));
+      if(data.games)localStorage.setItem('filmothek_games',JSON.stringify(data.games));
+      if(data.consoles)localStorage.setItem('filmothek_consoles',JSON.stringify(data.consoles));
       save();
       showToast(`Import erfolgreich! (${data.exportDate||'unbekannt'})`);
-      renderCollection('all');
+      renderCollection('seen');
     }catch(err){showToast('Fehler beim Import!')}
   };
   reader.readAsText(file);e.target.value='';
 }
 
 // Smart match: prefer popular results with latin titles that closely match the search
-function bestMatch(results,query){
+function bestMatch(results,query,yearHint){
   if(!results||!results.length)return null;
-  const q=query.toLowerCase();
-  // Filter out results with non-latin titles (CJK, Arabic, etc) unless query itself has them
+  const q=query.toLowerCase().trim();
   const hasLatin=/[a-zA-ZäöüÄÖÜß]/.test(query);
   let filtered=results;
   if(hasLatin){
@@ -981,15 +1275,20 @@ function bestMatch(results,query){
     });
     if(!filtered.length)filtered=results;
   }
-  // Score: exact title match > starts with > contains > popularity
   const scored=filtered.map(r=>{
     const t=(r.title||r.name||'').toLowerCase();
     let score=r.popularity||0;
     if(t===q)score+=10000;
     else if(t.startsWith(q))score+=5000;
     else if(t.includes(q))score+=2000;
-    // Boost vote count as proxy for "well known"
+    else if(q.includes(t))score+=1500;
     score+=(r.vote_count||0)*0.1;
+    // Year matching bonus
+    if(yearHint){
+      const ry=parseInt((r.release_date||r.first_air_date||'').split('-')[0]);
+      if(ry===yearHint)score+=3000;
+      else if(Math.abs(ry-yearHint)<=1)score+=1000;
+    }
     return{...r,_score:score};
   });
   scored.sort((a,b)=>b._score-a._score);
@@ -998,50 +1297,145 @@ function bestMatch(results,query){
 
 async function importList(e){
   const file=e.target.files[0];if(!file)return;
-  const text=await file.text();
-  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
   
-  // Clean function: remove quality tags, file extensions, brackets
+  // Read with proper encoding detection
+  let text;
+  try{
+    const buf=await file.arrayBuffer();
+    const bytes=new Uint8Array(buf);
+    // Try UTF-8 first
+    try{text=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}
+    catch(e){text=new TextDecoder('iso-8859-1').decode(bytes)}
+  }catch(e){text=await file.text()}
+  
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+  
+  // Improved clean function
   function cleanTitle(t){
     return t
-      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts)$/i,'')
+      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts|jpg|png|html|txt)$/i,'')
       .replace(/[\[\(](4k|uhd|1080p|720p|480p|2160p|hdr|hdr10|dolby|dts|bluray|blu-ray|brrip|dvdrip|webrip|web-dl|remux|extended|directors.?cut|remastered|unrated|imax)[\]\)]/gi,'')
       .replace(/\b(4k|uhd|1080p|720p|480p|2160p|hdr|hdr10|bluray|blu-ray|brrip|dvdrip|webrip|web-dl|remux|x264|x265|h264|h265|aac|ac3|dts)\b/gi,'')
-      .replace(/\s*[-_.]+\s*/g,' ')
       .replace(/\s{2,}/g,' ')
       .trim();
   }
   
-  // Deduplicate by cleaned title
+  // Extract year from title like "Film Name (2006)"
+  function extractYear(t){
+    const m=t.match(/\((\d{4})\)\s*$/);
+    return m?parseInt(m[1]):null;
+  }
+  
+  // Remove year and clean for search
+  function searchName(t){
+    let s=t.replace(/\s*\(\d{4}\)\s*/g,' ').trim();
+    // Remove part numbers like "I", "II" etc at end for better TMDB matching
+    // but keep them for dedup
+    return s;
+  }
+  
+  // For TMDB search: try subtitle after " - " if full title fails
+  function getSubtitle(t){
+    const parts=t.split(/\s+[-–—]\s+/);
+    if(parts.length>=2){
+      // Return the part after the dash (subtitle)
+      return parts.slice(1).join(' ').replace(/\s*\(\d{4}\)\s*/g,'').trim();
+    }
+    return null;
+  }
+  
+  // Known gaming platforms
+  const platformMap={'switch':'Nintendo Switch','ps1':'PlayStation','ps2':'PlayStation 2','ps3':'PlayStation 3','ps4':'PlayStation 4','ps5':'PlayStation 5','xbox':'Xbox','xbox360':'Xbox 360','xboxone':'Xbox One','xboxsx':'Xbox Series X','pc':'PC','steam':'PC','wii':'Nintendo Wii','wiiu':'Wii U','snes':'Super Nintendo','n64':'Nintendo 64','gamecube':'Nintendo GameCube','gameboy':'Game Boy','gba':'Game Boy Advance','ds':'Nintendo DS','3ds':'Nintendo 3DS','psp':'PSP','vita':'PS Vita','megadrive':'Sega Mega Drive','genesis':'Sega Genesis','dreamcast':'Dreamcast','saturn':'Sega Saturn','atari':'Atari'};
+  
+  // Deduplicate by cleaned title + year combo
   const seen=new Map();
   const cleaned=[];
   for(const line of lines){
-    const parts=line.split(';');
+    // Check for backslash platform format: "Game Name\Switch"
+    let platform=null;
+    let mainLine=line;
+    const bsIdx=line.indexOf('\\');
+    if(bsIdx>0){
+      const platRaw=line.slice(bsIdx+1).trim().toLowerCase().replace(/\s+/g,'');
+      if(platformMap[platRaw]){
+        platform=platformMap[platRaw];
+        mainLine=line.slice(0,bsIdx).trim();
+      }else{
+        // Try partial match
+        const found=Object.entries(platformMap).find(([k])=>platRaw.includes(k));
+        if(found){platform=found[1];mainLine=line.slice(0,bsIdx).trim()}
+      }
+    }
+    
+    const parts=mainLine.split(';');
     const raw=parts[0].trim();
-    const clean=cleanTitle(raw).toLowerCase();
+    const clean=cleanTitle(raw);
     if(!clean)continue;
-    if(seen.has(clean))continue;
-    seen.set(clean,true);
-    cleaned.push({name:cleanTitle(raw),parts});
+    // Skip non-media files
+    if(/\.(jpg|png|html|txt)$/i.test(raw))continue;
+    
+    const year=extractYear(clean);
+    const dedupKey=(searchName(clean)).toLowerCase();
+    if(seen.has(dedupKey)){
+      // If same name but different year, keep both
+      const prevYear=seen.get(dedupKey);
+      if(year&&prevYear&&year!==prevYear){
+        // Different year = different movie, keep it
+      }else{
+        continue; // true duplicate
+      }
+    }
+    seen.set(dedupKey,year||0);
+    cleaned.push({name:clean,searchable:searchName(clean),year,originalRaw:mainLine,parts,platform});
   }
   
-  showToast(`${cleaned.length} Einträge (${lines.length-cleaned.length} Duplikate entfernt)...`);
+  showToast(`${cleaned.length} Einträge werden verarbeitet...`);
   
-  let added=0,skipped=0;
+  let added=0,skipped=0,notFound=0;
+  const notFoundList=[];
   for(let i=0;i<cleaned.length;i++){
-    const{name,parts}=cleaned[i];
+    const{name,searchable,year,originalRaw,parts,platform}=cleaned[i];
     if(!name)continue;
     
-    // Update progress every 5 items
     if(i%5===0)showToast(`Verarbeite ${i+1}/${cleaned.length}...`);
+    
+    // If platform is set, this is a game - use RAWG
+    if(platform){
+      try{
+        const rawgRes=await fetch(`https://api.rawg.io/api/games?key=b0e82b42e329444293b87c1fc161bfad&search=${encodeURIComponent(searchable)}&page_size=5`);
+        const rawgData=await rawgRes.json();
+        if(rawgData?.results?.length){
+          const game=rawgData.results[0];
+          const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+          const gid=`rawg_${game.id}`;
+          if(!gamesCol[gid]){
+            gamesCol[gid]={
+              id:game.id,name:game.name,
+              poster:game.background_image,
+              released:game.released,
+              rating:game.rating,
+              platform:platform,
+              platforms:(game.platforms||[]).map(p=>p.platform.name),
+              originalName:name
+            };
+            localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+            added++;
+          }else{skipped++}
+        }else{
+          notFound++;notFoundList.push(originalRaw+'\\'+platform);
+        }
+      }catch(err){notFound++;notFoundList.push(originalRaw+'\\'+platform)}
+      if(i%3===2)await new Promise(r=>setTimeout(r,250));
+      continue;
+    }
     
     if(parts.length>=3){
       // Series with progress
       const sn=parseInt((parts[1]||'').replace(/\D/g,''))||1;
       const en=parseInt((parts[2]||'').replace(/\D/g,''))||1;
-      const res=await searchTV(name);
-      if(res?.results?.length){
-        const tv=res.results[0];
+      const res=await searchTV(searchable);
+      const tv=bestMatch(res?.results,searchable,year);
+      if(tv){
         const d=getSeriesData(tv.id);
         d.seriesInfo={id:tv.id,name:tv.name,poster_path:tv.poster_path,first_air_date:tv.first_air_date,vote_average:tv.vote_average,type:'series',seasons:tv.number_of_seasons||sn};
         if(!d.episodes)d.episodes={};
@@ -1049,12 +1443,11 @@ async function importList(e){
         setSeriesData(tv.id,d);added++;
       }else{skipped++}
     }else if(parts.length===2){
-      // Could be Series;S03 (whole season watched)
       const sn=parseInt((parts[1]||'').replace(/\D/g,''));
       if(sn){
-        const res=await searchTV(name);
-        if(res?.results?.length){
-          const tv=res.results[0];
+        const res=await searchTV(searchable);
+        const tv=bestMatch(res?.results,searchable,year);
+        if(tv){
           const d=getSeriesData(tv.id);
           d.seriesInfo={id:tv.id,name:tv.name,poster_path:tv.poster_path,first_air_date:tv.first_air_date,vote_average:tv.vote_average,type:'series',seasons:tv.number_of_seasons||sn};
           if(!d.episodes)d.episodes={};
@@ -1063,9 +1456,37 @@ async function importList(e){
         }else{skipped++}
       }
     }else{
-      // Try as movie first, then as series - use smart matching
-      const res=await searchMovies(name);
-      const mv=bestMatch(res?.results,name);
+      // Movie search with multiple strategies
+      let mv=null;
+      
+      // Strategy 1: Search with full cleaned name (without year)
+      let res=await searchMovies(searchable);
+      mv=bestMatch(res?.results,searchable,year);
+      
+      // Strategy 2: If not found or low confidence, try subtitle only
+      if(!mv||((mv._score||0)<1000)){
+        const sub=getSubtitle(searchable);
+        if(sub&&sub.length>3){
+          const res2=await searchMovies(sub);
+          const mv2=bestMatch(res2?.results,sub,year);
+          if(mv2&&(mv2._score||0)>(mv?mv._score||0:0)){
+            mv=mv2;
+          }
+        }
+      }
+      
+      // Strategy 3: If title has "007" or numbered prefix, search without it
+      if(!mv||((mv._score||0)<1000)){
+        const stripped=searchable.replace(/^.*?\d{3}\s*/,'').replace(/^(I+|V+|\d+)\s+/,'').trim();
+        if(stripped.length>3&&stripped!==searchable){
+          const res3=await searchMovies(stripped);
+          const mv3=bestMatch(res3?.results,stripped,year);
+          if(mv3&&(mv3._score||0)>(mv?mv._score||0:0)){
+            mv=mv3;
+          }
+        }
+      }
+      
       if(mv){
         if(!collection[mv.id]){
           const d=getMovieData(mv.id);
@@ -1074,22 +1495,41 @@ async function importList(e){
         }else{skipped++}
       }else{
         // Try as series
-        const tvRes=await searchTV(name);
-        if(tvRes?.results?.length){
-          const tv=tvRes.results[0];
+        const tvRes=await searchTV(searchable);
+        const tv=bestMatch(tvRes?.results,searchable,year);
+        if(tv){
           const d=getSeriesData(tv.id);
           d.seriesInfo={id:tv.id,name:tv.name,poster_path:tv.poster_path,first_air_date:tv.first_air_date,vote_average:tv.vote_average,type:'series',seasons:tv.number_of_seasons||1};
           setSeriesData(tv.id,d);added++;
-        }else{skipped++}
+        }else{
+          notFound++;
+          notFoundList.push(originalRaw);
+          console.log('NOT FOUND:',name,'→ searched:',searchable);
+        }
       }
     }
-    // Small delay to not hammer the API
     if(i%3===2)await new Promise(r=>setTimeout(r,250));
   }
-  showToast(`✓ ${added} hinzugefügt${skipped?' · '+skipped+' übersprungen':''}`);
+  // Show results and offer not-found download
+  let msg=`✓ ${added} hinzugefügt`;
+  if(skipped)msg+=` · ${skipped} vorhanden`;
+  if(notFound)msg+=` · ${notFound} nicht gefunden`;
+  showToast(msg);
+  
+  if(notFoundList.length){
+    // Save not-found list for download
+    localStorage.setItem('filmothek_notfound',JSON.stringify(notFoundList));
+    setTimeout(()=>{
+      if(confirm(`${notFoundList.length} Einträge nicht gefunden. Liste herunterladen?`)){
+        const blob=new Blob([notFoundList.join('\n')],{type:'text/plain'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+        a.download='nicht_gefunden.txt';a.click();
+      }
+    },500);
+  }
+  
   e.target.value='';
   if(collectionMode)renderCollection('seen');
-  // Refresh swipe queue
   const unsorted=Object.entries(collection).filter(([,d])=>d.movieInfo&&!d.seen&&!d.watchlist&&!d.review);
   if(unsorted.length){swipeQueue=unsorted.map(([id,d])=>({id:parseInt(id),...d.movieInfo}));swipeIndex=0;saveSwipeState()}
 }
@@ -1258,6 +1698,7 @@ function submitSwipeRating(rating){
     const d=getMovieData(currentSwipeMovie.id);
     d.seen=true;d.rating=rating;d.movieInfo={...currentSwipeMovie,type:'movie'};
     setMovieData(currentSwipeMovie.id,d);
+    removeFromReviewById(currentSwipeMovie.id);
   }
   document.getElementById('swipeRating').classList.remove('open');
   swipeIndex++;saveSwipeState();
@@ -1295,6 +1736,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 // Init - collection is the start page
 currentTab='collection';collectionMode='movies';
+applyCategoryVisibility();
 renderCollection('seen');
 </script>
 </body>

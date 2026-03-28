@@ -1,0 +1,75 @@
+=============================================
+  ICON-LISTE FÜR MEINE DATENBANK
+  Alle PNG-Dateien im gleichen Ordner
+  wie die index.html auf GitHub
+=============================================
+
+Größe: 64x64px oder 128x128px
+Format: PNG mit transparentem Hintergrund
+Stil: Am besten weiß oder gold auf transparent
+
+
+--- APP-ICONS (für Startbildschirm) ---
+
+icon-192.png        → App-Icon 192x192px
+icon-512.png        → App-Icon 512x512px
+
+
+--- ZUFALLS-VORSCHLAG ---
+
+icon-random.png     → Würfel, Kleeblatt oder Fragezeichen
+
+
+--- PLAYSTATION ---
+
+icon-ps1.png        → PlayStation 1
+icon-ps2.png        → PlayStation 2
+icon-ps3.png        → PlayStation 3
+icon-ps4.png        → PlayStation 4
+icon-ps5.png        → PlayStation 5
+icon-psp.png        → PSP
+icon-vita.png       → PS Vita
+
+
+--- XBOX ---
+
+icon-xbox360.png    → Xbox 360
+icon-xboxone.png    → Xbox One
+icon-xboxsx.png     → Xbox Series X
+
+
+--- NINTENDO ---
+
+icon-snes.png       → Super Nintendo
+icon-n64.png        → Nintendo 64
+icon-gamecube.png   → GameCube
+icon-wii.png        → Nintendo Wii
+icon-wiiu.png       → Wii U
+icon-gameboy.png    → Game Boy
+icon-gba.png        → Game Boy Advance
+icon-ds.png         → Nintendo DS
+icon-3ds.png        → Nintendo 3DS
+icon-switch.png     → Nintendo Switch
+
+
+--- SEGA ---
+
+icon-megadrive.png  → Sega Mega Drive
+icon-saturn.png     → Sega Saturn
+icon-dreamcast.png  → Dreamcast
+
+
+--- SONSTIGE ---
+
+icon-atari.png      → Atari
+
+
+=============================================
+  GESAMT: 29 PNG-Dateien
+=============================================
+
+Tipp: Gute Quellen für Icons:
+- flaticon.com
+- icons8.com
+- iconarchive.com
+Suchbegriffe: "playstation 5 console icon png"
