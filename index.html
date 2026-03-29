@@ -470,16 +470,109 @@ searchInputTop.addEventListener('input',()=>handleSearch(searchInputTop.value.tr
 
 async function performSearch(q){
   const data=await searchMulti(q);
-  if(!data||!data.results){document.getElementById('searchContent').innerHTML=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;return}
-  const movies=data.results.filter(r=>r.media_type==='movie');
-  const tvs=data.results.filter(r=>r.media_type==='tv');
-  const people=data.results.filter(r=>r.media_type==='person');
+  // Also search RAWG for games
+  let games=[];
+  try{
+    const rawgRes=await fetch(`https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&search=${encodeURIComponent(q)}&page_size=8`);
+    const rawgData=await rawgRes.json();
+    if(rawgData?.results)games=rawgData.results;
+  }catch(e){}
+  
+  if((!data||!data.results||!data.results.length)&&!games.length){document.getElementById('searchContent').innerHTML=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;return}
+  const movies=(data?.results||[]).filter(r=>r.media_type==='movie');
+  const tvs=(data?.results||[]).filter(r=>r.media_type==='tv');
+  const people=(data?.results||[]).filter(r=>r.media_type==='person');
   let h='';
   if(people.length){h+=`<div class="section-header"><div class="section-title">Personen</div></div><div class="person-results" style="margin-bottom:24px">`;people.slice(0,5).forEach(p=>{const kf=(p.known_for||[]).map(k=>k.title||k.name).slice(0,3).join(', ');h+=`<div class="person-result-card" onclick="openPerson(${p.id})"><div class="person-result-photo">${p.profile_path?`<img src="${posterUrl(p.profile_path,'w185')}">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">👤</div>`}</div><div class="person-result-info"><h4>${p.name}</h4><p>${p.known_for_department||''}${kf?' · '+kf:''}</p></div></div>`});h+=`</div>`}
   if(tvs.length){h+=`<div class="section-header"><div class="section-title">Serien</div></div><div class="search-results" style="margin-bottom:24px">${tvs.map(s=>createCard(s,'tv')).join('')}</div>`}
-  if(movies.length){h+=`<div class="section-header"><div class="section-title">Filme</div></div><div class="search-results">${movies.map(m=>createCard(m,'movie')).join('')}</div>`}
-  if(!movies.length&&!tvs.length&&!people.length)h=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;
+  if(movies.length){h+=`<div class="section-header"><div class="section-title">Filme</div></div><div class="search-results" style="margin-bottom:24px">${movies.map(m=>createCard(m,'movie')).join('')}</div>`}
+  if(games.length){
+    const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+    h+=`<div class="section-header"><div class="section-title">Spiele</div></div><div class="search-results">${games.map(g=>{
+      const yr=(g.released||'').split('-')[0];
+      const plats=(g.platforms||[]).map(p=>p.platform.name).join(', ');
+      const inCol=gamesCol['rawg_'+g.id];
+      const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px;flex-shrink:0"></span>':'';
+      return `<div class="movie-card" onclick="openGameDetail(${g.id})"><div class="movie-poster">${g.background_image?`<img src="${g.background_image}" alt="${g.name}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${g.name}</div>`}${g.rating?`<div class="rating-badge">★ ${g.rating.toFixed(1)}</div>`:''}<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${g.name}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
+    }).join('')}</div>`}
+  if(!movies.length&&!tvs.length&&!people.length&&!games.length)h=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;
   document.getElementById('searchContent').innerHTML=h;
+}
+
+// Game Detail
+async function openGameDetail(id){
+  const modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
+  modal.classList.add('open');content.innerHTML='<div class="loading" style="min-height:100vh;align-items:center"><div class="spinner"></div></div>';
+  let game;
+  try{
+    const res=await fetch(`https://api.rawg.io/api/games/${id}?key=0456e26e4378414398fa767657c083ea`);
+    game=await res.json();
+  }catch(e){modal.classList.remove('open');return}
+  if(!game){modal.classList.remove('open');return}
+  
+  const yr=(game.released||'').split('-')[0];
+  const genres=(game.genres||[]).map(g=>g.name);
+  const platforms=(game.platforms||[]).map(p=>p.platform.name);
+  const devs=(game.developers||[]).map(d=>d.name).join(', ');
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const gid='rawg_'+game.id;
+  const isAdded=!!gamesCol[gid];
+  
+  // Build platform buttons for adding
+  const consoleCats=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
+  const platformMap={
+    'PlayStation':'PlayStation 1','PlayStation 2':'PlayStation 2','PlayStation 3':'PlayStation 3',
+    'PlayStation 4':'PlayStation 4','PlayStation 5':'PlayStation 5','PS Vita':'PS Vita','PSP':'PSP',
+    'Xbox 360':'Xbox 360','Xbox One':'Xbox One','Xbox Series S/X':'Xbox Series X',
+    'Nintendo Switch':'Nintendo Switch','Wii':'Nintendo Wii','Wii U':'Wii U',
+    'Nintendo 3DS':'Nintendo 3DS','Nintendo DS':'Nintendo DS',
+    'Nintendo 64':'Nintendo 64','SNES':'Super Nintendo','GameCube':'GameCube',
+    'Game Boy Advance':'Game Boy Advance','Game Boy':'Game Boy',
+    'SEGA Saturn':'Sega Saturn','Dreamcast':'Dreamcast','Genesis':'Sega Mega Drive',
+    'Atari 2600':'Atari','Atari 5200':'Atari','Atari 7800':'Atari',
+    'PC':'PC','macOS':'PC','Linux':'PC'
+  };
+  
+  const addBtns=platforms.map(p=>{
+    const mapped=platformMap[p]||p;
+    const alreadyOnPlatform=isAdded&&gamesCol[gid]?.platform===mapped;
+    return `<button onclick="addGameToCollection(${game.id},'${mapped.replace(/'/g,"\\'")}',this)" class="action-btn ${alreadyOnPlatform?'seen active':''}" style="font-size:12px;padding:8px 14px">${alreadyOnPlatform?'✓ ':''} ${p}</button>`;
+  }).join('');
+  
+  content.innerHTML=`<div class="modal-backdrop">${game.background_image?`<img src="${game.background_image}">`:''}
+    <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="modal-movie-title">${game.name}</div>
+    <div class="modal-meta">${yr?`<span>${yr}</span>`:''}${devs?`<span>${devs}</span>`:''}${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
+    ${game.description_raw?`<div class="modal-overview">${game.description_raw.slice(0,500)}${game.description_raw.length>500?'...':''}</div>`:''}
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">Zu Plattform hinzufügen:</div>
+      <div class="action-row" style="flex-wrap:wrap">${addBtns}</div>
+    </div>
+    </div>`;
+}
+
+function addGameToCollection(rawgId,platform,btn){
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const gid='rawg_'+rawgId;
+  
+  // Fetch game info if not cached
+  fetch(`https://api.rawg.io/api/games/${rawgId}?key=0456e26e4378414398fa767657c083ea`)
+    .then(r=>r.json()).then(game=>{
+      gamesCol[gid]={
+        id:game.id,name:game.name,
+        poster:game.background_image,
+        released:game.released,
+        rating:game.rating,
+        platform:platform,
+        platforms:(game.platforms||[]).map(p=>p.platform.name),
+        genres:(game.genres||[]).map(g=>g.name),
+        originalName:game.name
+      };
+      localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+      btn.classList.add('active');
+      btn.innerHTML='✓ '+btn.textContent.trim();
+      showToast(`"${game.name}" → ${platform}`);
+    }).catch(()=>showToast('Fehler beim Hinzufügen'));
 }
 
 // Movie Detail
@@ -1402,7 +1495,7 @@ async function importList(e){
     // If platform is set, this is a game - use RAWG
     if(platform){
       try{
-        const rawgRes=await fetch(`https://api.rawg.io/api/games?key=b0e82b42e329444293b87c1fc161bfad&search=${encodeURIComponent(searchable)}&page_size=5`);
+        const rawgRes=await fetch(`https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&search=${encodeURIComponent(searchable)}&page_size=5`);
         const rawgData=await rawgRes.json();
         if(rawgData?.results?.length){
           const game=rawgData.results[0];
