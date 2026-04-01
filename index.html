@@ -1573,8 +1573,12 @@ document.getElementById('modeToggle').addEventListener('click',e=>{
   btn.classList.add('active');
   collectionMode=btn.dataset.mode;
   updateFilters(collectionMode);
-  const firstFilter=document.querySelector('#collectionFilters .filter-tab');
-  if(firstFilter)renderCollection(firstFilter.dataset.filter);
+  if(collectionMode==='news'){
+    renderCollection('alle');
+  }else{
+    const firstFilter=document.querySelector('#collectionFilters .filter-tab');
+    if(firstFilter){firstFilter.classList.add('active');renderCollection(firstFilter.dataset.filter)}
+  }
 });
 document.getElementById('collectionFilters').addEventListener('click',e=>{const btn=e.target.closest('.filter-tab');if(!btn)return;document.querySelectorAll('#collectionFilters .filter-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');const gv=document.getElementById('gamesView');if(gv){gv.dataset.pcsub='';gv.dataset.console=''}renderCollection(btn.dataset.filter)});
 
