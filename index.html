@@ -541,42 +541,35 @@ async function openGameDetail(id){
   
   let actionArea='';
   
-  if(isAdded){
-    // Already in collection - show where it is
-    if(savedPlatform==='PC'){
-      actionArea=`<div style="margin-bottom:16px">
-        <div style="font-size:13px;color:var(--accent-green);margin-bottom:10px">✓ In deiner Sammlung (PC${savedSub?' · '+savedSub:''})</div>
-        <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-dim);margin-bottom:6px">Kategorie ändern:</div>
-        <div class="action-row" style="flex-wrap:wrap">
-          <button onclick="setGameSubPlatform(${game.id},'Digital',this)" class="action-btn ${savedSub==='Digital'?'seen active':''}" style="font-size:13px;padding:10px 18px">${savedSub==='Digital'?'✓ ':''}Digital</button>
-          <button onclick="setGameSubPlatform(${game.id},'Steam',this)" class="action-btn ${savedSub==='Steam'?'seen active':''}" style="font-size:13px;padding:10px 18px">${savedSub==='Steam'?'✓ ':''}Steam</button>
-        </div>
-      </div>`;
-    }else{
-      actionArea=`<div style="font-size:13px;color:var(--accent-green);margin-bottom:16px">✓ In deiner Sammlung (${savedPlatform})</div>`;
-    }
-  }else{
-    // Not in collection - show add buttons for available platforms
-    // Group: PC first (as Digital/Steam), then consoles
-    const hasPC=platforms.some(p=>p==='PC'||p==='macOS'||p==='Linux');
-    const consolePlats=platforms.map(p=>platformMap[p]||p).filter(p=>p!=='PC');
-    // Remove duplicates
-    const uniqueConsoles=[...new Set(consolePlats)];
-    
-    let addBtns='';
-    if(hasPC){
-      addBtns+=`<button onclick="addGameToPlatform(${game.id},'PC','Digital',this)" class="action-btn" style="font-size:12px;padding:8px 14px">+ Digital (PC)</button>`;
-      addBtns+=`<button onclick="addGameToPlatform(${game.id},'PC','Steam',this)" class="action-btn" style="font-size:12px;padding:8px 14px">+ Steam (PC)</button>`;
-    }
-    uniqueConsoles.forEach(p=>{
-      addBtns+=`<button onclick="addGameToPlatform(${game.id},'${p.replace(/'/g,"\\'")}',null,this)" class="action-btn" style="font-size:12px;padding:8px 14px">+ ${p}</button>`;
-    });
-    
-    actionArea=`<div style="margin-bottom:16px">
-      <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">Hinzufügen zu:</div>
-      <div class="action-row" style="flex-wrap:wrap">${addBtns}</div>
-    </div>`;
+  // Build saved platforms list
+  const savedPlats=isAdded?(gamesCol[gid].savedPlatforms||[savedPlatform+(savedSub?' ('+savedSub+')':'')]):[]; 
+  
+  // Show current platforms
+  if(savedPlats.length){
+    actionArea+=`<div style="font-size:13px;color:var(--accent-green);margin-bottom:12px">✓ In deiner Sammlung: ${savedPlats.join(', ')}</div>`;
   }
+  
+  // Platform toggle buttons - always show all available platforms
+  const hasPC=platforms.some(p=>p==='PC'||p==='macOS'||p==='Linux');
+  const consolePlats=platforms.map(p=>platformMap[p]||p).filter(p=>p!=='PC');
+  const uniqueConsoles=[...new Set(consolePlats)];
+  
+  let platBtns='';
+  if(hasPC){
+    const hasDig=savedPlats.includes('PC (Digital)');
+    const hasSteam=savedPlats.includes('PC (Steam)');
+    platBtns+=`<button onclick="toggleGamePlat(${game.id},'PC (Digital)',this)" class="action-btn ${hasDig?'seen active':''}" style="font-size:12px;padding:9px 16px">${hasDig?'✓ ':''}Digital (PC)</button>`;
+    platBtns+=`<button onclick="toggleGamePlat(${game.id},'PC (Steam)',this)" class="action-btn ${hasSteam?'seen active':''}" style="font-size:12px;padding:9px 16px">${hasSteam?'✓ ':''}Steam (PC)</button>`;
+  }
+  uniqueConsoles.forEach(p=>{
+    const has=savedPlats.includes(p);
+    platBtns+=`<button onclick="toggleGamePlat(${game.id},'${p.replace(/'/g,"\\'")}',this)" class="action-btn ${has?'seen active':''}" style="font-size:12px;padding:9px 16px">${has?'✓ ':''}${p}</button>`;
+  });
+  
+  actionArea+=`<div style="margin-bottom:16px">
+    <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-dim);margin-bottom:8px">Plattformen:</div>
+    <div class="action-row" style="flex-wrap:wrap">${platBtns}</div>
+  </div>`;
   
   // German Wikipedia description
   let deDesc='';
@@ -595,24 +588,65 @@ async function openGameDetail(id){
     </div>`;
 }
 
-function addGameToPlatform(rawgId,platform,sub,btn){
+function toggleGamePlat(rawgId,platName,btn){
   const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
   const gid='rawg_'+rawgId;
-  if(gamesCol[gid]){showToast('Bereits in Sammlung');return}
   
-  fetch(`https://api.rawg.io/api/games/${rawgId}?key=0456e26e4378414398fa767657c083ea`)
-    .then(r=>r.json()).then(game=>{
-      gamesCol[gid]={
-        id:game.id,name:game.name,poster:game.background_image,
-        released:game.released,rating:game.rating,platform:platform,subPlatform:sub,
-        platforms:(game.platforms||[]).map(p=>p.platform.name),
-        genres:(game.genres||[]).map(g=>g.name),originalName:game.name,lastModified:Date.now()
-      };
-      localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
-      btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
-      showToast(`"${game.name}" → ${platform}${sub?' · '+sub:''}`);
-      setTimeout(()=>openGameDetail(rawgId),600);
-    }).catch(()=>showToast('Fehler'));
+  if(gamesCol[gid]){
+    // Already in collection - toggle this platform
+    let plats=gamesCol[gid].savedPlatforms||[];
+    // Migrate old format
+    if(!plats.length&&gamesCol[gid].platform){
+      const old=gamesCol[gid].platform;
+      const sub=gamesCol[gid].subPlatform;
+      if(old==='PC'&&sub)plats.push('PC ('+sub+')');
+      else plats.push(old);
+    }
+    
+    const idx=plats.indexOf(platName);
+    if(idx>=0){
+      plats.splice(idx,1);
+      btn.classList.remove('active');
+      btn.textContent=btn.textContent.replace('✓ ','');
+    }else{
+      plats.push(platName);
+      btn.classList.add('active');
+      btn.textContent='✓ '+btn.textContent.replace('✓ ','');
+    }
+    gamesCol[gid].savedPlatforms=plats;
+    // Update main platform for collection view compatibility
+    if(plats.length){
+      const first=plats[0];
+      if(first.startsWith('PC')){gamesCol[gid].platform='PC';gamesCol[gid].subPlatform=first.includes('Steam')?'Steam':first.includes('Digital')?'Digital':null}
+      else{gamesCol[gid].platform=first;gamesCol[gid].subPlatform=null}
+    }
+    gamesCol[gid].lastModified=Date.now();
+    localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+    // Update status text
+    const statusEl=btn.closest('.modal-body')?.querySelector('div[style*="accent-green"]');
+    if(statusEl)statusEl.textContent=plats.length?'✓ In deiner Sammlung: '+plats.join(', '):'Nicht in Sammlung';
+    showToast(plats.length?platName+(idx>=0?' entfernt':' hinzugefügt'):'Alle Plattformen entfernt');
+  }else{
+    // New game - add to collection
+    fetch(`https://api.rawg.io/api/games/${rawgId}?key=0456e26e4378414398fa767657c083ea`)
+      .then(r=>r.json()).then(game=>{
+        const isPCSub=platName.startsWith('PC');
+        gamesCol[gid]={
+          id:game.id,name:game.name,poster:game.background_image,
+          released:game.released,rating:game.rating,
+          platform:isPCSub?'PC':platName,
+          subPlatform:platName.includes('Steam')?'Steam':platName.includes('Digital')?'Digital':null,
+          savedPlatforms:[platName],
+          platforms:(game.platforms||[]).map(p=>p.platform.name),
+          genres:(game.genres||[]).map(g=>g.name),originalName:game.name,lastModified:Date.now()
+        };
+        localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+        btn.classList.add('active');btn.textContent='✓ '+btn.textContent.replace('✓ ','');
+        const statusEl=btn.closest('.modal-body')?.querySelector('div[style*="gold-dim"]')?.previousElementSibling;
+        showToast(`"${game.name}" → ${platName}`);
+        setTimeout(()=>openGameDetail(rawgId),500);
+      }).catch(()=>showToast('Fehler'));
+  }
 }
 
 function setGameSubPlatform(rawgId,sub,btn){
@@ -982,7 +1016,7 @@ function renderCollection(f='all'){
         const pcSubs=[
           {id:'digital',name:'Digital',sub:'Digital'},
           {id:'steam',name:'Steam',sub:'Steam'}
-        ].filter(s=>consoleCats[s.id]!==false);
+        ].filter(s=>consoleCats[s.id]===true);
         
         // Also show uncategorized PC games
         const uncatGames=pcGames.filter(g=>!g.subPlatform);
@@ -1013,7 +1047,7 @@ function renderCollection(f='all'){
         {id:'switch',name:'Nintendo Switch'},
         {id:'megadrive',name:'Sega Mega Drive'},{id:'saturn',name:'Sega Saturn'},{id:'dreamcast',name:'Dreamcast'},
         {id:'atari',name:'Atari'}
-      ].filter(c=>consoleCats[c.id]!==false);
+      ].filter(c=>consoleCats[c.id]===true);
       
       // Check if a specific console is selected
       const selectedConsole=document.getElementById('gamesView')?.dataset?.console;
@@ -1308,11 +1342,11 @@ function openGameSettings(){
   overlay.style.cssText='position:fixed;inset:0;z-index:250;background:var(--bg-deep);overflow-y:auto;padding:0';
   
   function tile(id,name){
-    const isOn=cons[id]!==false;
-    return `<div onclick="toggleGameSetting('${id}',this)" style="background:var(--bg-card);border:1.5px solid ${isOn?'var(--accent-green)':'var(--border)'};border-radius:var(--radius);padding:14px 8px 12px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative">
-      <div style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;border:2px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
-      <img src="icon-${id}.png" style="width:56px;height:56px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:32px;margin-bottom:8px">🎮</div>
-      <div style="font-size:11px;font-weight:600;color:var(--text-primary);line-height:1.2">${name}</div>
+    const isOn=cons[id]===true;
+    return `<div onclick="toggleGameSetting('${id}',this)" style="background:var(--bg-card);border:1.5px solid ${isOn?'var(--accent-green)':'var(--border)'};border-radius:var(--radius);padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative">
+      <div style="position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;border:2px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
+      <img src="icon-${id}.png" style="width:64px;height:64px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:36px;margin-bottom:8px">🎮</div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.2">${name}</div>
     </div>`;
   }
   
@@ -1338,9 +1372,9 @@ function openGameSettings(){
 
 function toggleGameSetting(id,el){
   const cons=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
-  cons[id]=cons[id]===false?true:false;
+  cons[id]=cons[id]===true?false:true;
   localStorage.setItem('filmothek_consoles',JSON.stringify(cons));
-  const isOn=cons[id]!==false;
+  const isOn=cons[id]===true;
   const dot=el.querySelector('div[style*="border-radius:50%"]');
   if(dot){
     dot.style.borderColor=isOn?'var(--accent-green)':'var(--text-muted)';
