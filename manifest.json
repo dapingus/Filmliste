@@ -1,12 +1,12 @@
 {
-  "name": "Meine Datenbank",
-  "short_name": "Datenbank",
-  "description": "Meine persönliche Film- und Seriensammlung",
+  "name": "Pingus Liste",
+  "short_name": "Pingus Liste",
+  "description": "Meine persönliche Film-, Serien- und Games-Sammlung",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "any",
-  "background_color": "#07070b",
-  "theme_color": "#07070b",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "icon-192.png",
