@@ -499,81 +499,93 @@ function handleSearch(v){clearTimeout(searchTimeout);if(v.length<2){if(currentTa
 searchInputTop.addEventListener('input',()=>handleSearch(searchInputTop.value));
 
 async function performSearch(q){
-  const data=await searchMulti(q);
-  // Also search RAWG for games
-  let games=[];
-  try{
-    const rawgRes=await fetch(`https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&search=${encodeURIComponent(q)}&page_size=8`);
-    const rawgData=await rawgRes.json();
-    if(rawgData?.results)games=rawgData.results;
-  }catch(e){}
+  var mode=collectionMode;
+  var h='';
   
-  if((!data||!data.results||!data.results.length)&&!games.length){document.getElementById('searchContent').innerHTML=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;return}
-  const movies=(data?.results||[]).filter(r=>r.media_type==='movie');
-  const tvs=(data?.results||[]).filter(r=>r.media_type==='tv');
-  const people=(data?.results||[]).filter(r=>r.media_type==='person');
-  let h='';
-  if(people.length){h+=`<div class="section-header"><div class="section-title">Personen</div></div><div class="person-results" style="margin-bottom:24px">`;people.slice(0,5).forEach(p=>{const kf=(p.known_for||[]).map(k=>k.title||k.name).slice(0,3).join(', ');h+=`<div class="person-result-card" onclick="openPerson(${p.id})"><div class="person-result-photo">${p.profile_path?`<img src="${posterUrl(p.profile_path,'w185')}">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">👤</div>`}</div><div class="person-result-info"><h4>${p.name}</h4><p>${p.known_for_department||''}${kf?' · '+kf:''}</p></div></div>`});h+=`</div>`}
-  if(tvs.length){h+=`<div class="section-header"><div class="section-title">Serien</div></div><div class="search-results" style="margin-bottom:24px">${tvs.map(s=>createCard(s,'tv')).join('')}</div>`}
-  if(movies.length){h+=`<div class="section-header"><div class="section-title">Filme</div></div><div class="search-results" style="margin-bottom:24px">${movies.map(m=>createCard(m,'movie')).join('')}</div>`}
-  if(games.length){
-    const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
-    h+=`<div class="section-header"><div class="section-title">Spiele</div></div><div class="search-results">${games.map(g=>{
-      const yr=(g.released||'').split('-')[0];
-      const plats=(g.platforms||[]).map(p=>p.platform.name).join(', ');
-      const inCol=gamesCol['rawg_'+g.id];
-      const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px;flex-shrink:0"></span>':'';
-      return `<div class="movie-card" onclick="openGameDetail(${g.id})"><div class="movie-poster">${g.background_image?`<img src="${g.background_image}" alt="${g.name}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${g.name}</div>`}${g.rating?`<div class="rating-badge">★ ${g.rating.toFixed(1)}</div>`:''}<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${g.name}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
-    }).join('')}</div>`}
-  
-  // Music search via Last.fm API (free, great search, has covers)
-  let musicResults=[];
-  try{
-    // Search artist first
-    var lfRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.search&artist='+encodeURIComponent(q)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=1');
-    var lfData=await lfRes.json();
-    var foundArtist=lfData?.results?.artistmatches?.artist?.[0]?.name;
-    if(foundArtist){
-      // Get top albums for this artist
-      var albRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(foundArtist)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=10');
-      var albData=await albRes.json();
-      if(albData?.topalbums?.album){
-        musicResults=albData.topalbums.album.filter(function(a){return a.name!=='(null)'&&a.name}).map(function(a){
-          var img=a.image?a.image.find(function(i){return i.size==='large'})||a.image[a.image.length-1]:null;
-          return {id:a.mbid||a.name,title:a.name,artist:{name:foundArtist},cover_medium:img?img['#text']:'',_isLFM:true,_mbid:a.mbid};
-        });
+  // MUSIC MODE - nur Last.fm
+  if(mode==='music'){
+    var musicResults=[];
+    try{
+      var lfRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.search&artist='+encodeURIComponent(q)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=1');
+      var lfData=await lfRes.json();
+      var foundArtist=lfData?.results?.artistmatches?.artist?.[0]?.name;
+      if(foundArtist){
+        var albRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(foundArtist)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=12');
+        var albData=await albRes.json();
+        if(albData?.topalbums?.album){
+          musicResults=albData.topalbums.album.filter(function(a){return a.name&&a.name!=='(null)'}).map(function(a){
+            var img=a.image?a.image.find(function(i){return i.size==='large'})||a.image[a.image.length-1]:null;
+            return {title:a.name,artist:foundArtist,cover:img?img['#text']:''};
+          });
+        }
       }
-    }
-    // Also search albums directly
-    if(musicResults.length<3){
       var albRes2=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.search&album='+encodeURIComponent(q)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=6');
       var albData2=await albRes2.json();
       if(albData2?.results?.albummatches?.album){
-        var existing=new Set(musicResults.map(function(m){return m.title+m.artist?.name}));
+        var existing=new Set(musicResults.map(function(m){return m.title+m.artist}));
         albData2.results.albummatches.album.forEach(function(a){
           if(a.name&&a.name!=='(null)'&&!existing.has(a.name+a.artist)){
             var img=a.image?a.image.find(function(i){return i.size==='large'})||a.image[a.image.length-1]:null;
-            musicResults.push({id:a.mbid||a.name,title:a.name,artist:{name:a.artist||''},cover_medium:img?img['#text']:'',_isLFM:true,_mbid:a.mbid});
+            musicResults.push({title:a.name,artist:a.artist||'',cover:img?img['#text']:''});
           }
         });
       }
+    }catch(e){}
+    
+    if(musicResults.length){
+      var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+      h+='<div class="section-header"><div class="section-title">Musik</div></div><div class="search-results">';
+      musicResults.forEach(function(m){
+        var inCol=false;
+        var tLow=(m.title||'').toLowerCase(),aLow=(m.artist||'').toLowerCase();
+        Object.values(musicCol).forEach(function(e){if((e.title||'').toLowerCase()===tLow&&(e.artist||'').toLowerCase()===aLow)inCol=true});
+        var dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px"></span>':'';
+        var isST=(m.title||'').toLowerCase().includes('soundtrack')||(m.title||'').toLowerCase().includes('ost ');
+        var safeArt=(m.artist||'').replace(/'/g,"\\'");
+        var safeTit=(m.title||'').replace(/'/g,"\\'");
+        h+='<div class="movie-card" onclick="openMusicDetailLFM(\''+safeArt+'\',\''+safeTit+'\')"><div class="movie-poster" style="aspect-ratio:1/1">'+(m.cover?'<img src="'+m.cover+'" loading="lazy" onerror="this.style.display=\'none\'">':'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:24px">🎵</div>')+'<div class="type-badge" style="background:rgba(156,39,176,0.85)">'+(isST?'OST':'ALBUM')+'</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">'+m.title+dot+'</div><div class="movie-year">'+m.artist+'</div></div></div>';
+      });
+      h+='</div>';
     }
-  }catch(e){console.log('Music search error:',e)}
-  
-  if(musicResults.length){
-    const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
-    h+=`<div class="section-header"><div class="section-title">Musik</div></div><div class="search-results">${musicResults.map(m=>{
-      const artist=m.artist?.name||'';
-      const cover=m.cover_medium||m.cover||'';
-      const inCol=musicCol['mb_'+m.id]||musicCol['dz_'+m.id];
-      const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px"></span>':'';
-      const isST=(m.title||'').toLowerCase().includes('soundtrack')||(m.title||'').toLowerCase().includes('ost ');
-      const yr=m._year||'';
-      return `<div class="movie-card" onclick="${m._isLFM?`openMusicDetailLFM('${(m.artist?.name||'').replace(/'/g,"\\\'")}','${(m.title||'').replace(/'/g,"\\\'")}')`:m._isMB?`openMusicDetailMB('${m.id}')`:`openMusicDetailMB('${m.id}')`}"><div class="movie-poster" style="aspect-ratio:1/1">${cover?`<img src="${cover}" alt="${m.title}" loading="lazy" onerror="this.style.display='none'">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:24px">🎵</div>`}<div class="type-badge" style="background:rgba(156,39,176,0.85)">${isST?'OST':'ALBUM'}</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${m.title}${dot}</div><div class="movie-year">${artist}${yr?' · '+yr:''}</div></div></div>`;
-    }).join('')}</div>`;
+    if(!h)h='<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Musik gefunden</p></div>';
+    document.getElementById('searchContent').innerHTML=h;
+    return;
   }
   
-  if(!movies.length&&!tvs.length&&!people.length&&!games.length&&!musicResults.length)h=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;
+  // GAMES MODE - nur RAWG
+  if(mode==='games'){
+    var games=[];
+    try{
+      var rawgRes=await fetch('https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&search='+encodeURIComponent(q)+'&page_size=12');
+      var rawgData=await rawgRes.json();
+      if(rawgData?.results)games=rawgData.results;
+    }catch(e){}
+    if(games.length){
+      var gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+      h+='<div class="section-header"><div class="section-title">Spiele</div></div><div class="search-results">';
+      games.forEach(function(g){
+        var yr=(g.released||'').split('-')[0];
+        var inCol=gamesCol['rawg_'+g.id];
+        var dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px"></span>':'';
+        h+='<div class="movie-card" onclick="openGameDetail('+g.id+')"><div class="movie-poster">'+(g.background_image?'<img src="'+g.background_image+'" loading="lazy" style="object-position:center top">':'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">'+g.name+'</div>')+(g.rating?'<div class="rating-badge">★ '+g.rating.toFixed(1)+'</div>':'')+'<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">'+g.name+dot+'</div><div class="movie-year">'+yr+'</div></div></div>';
+      });
+      h+='</div>';
+    }
+    if(!h)h='<div class="empty-state"><div class="empty-icon">😕</div><p>Kein Spiel gefunden</p></div>';
+    document.getElementById('searchContent').innerHTML=h;
+    return;
+  }
+  
+  // FILME/SERIEN/NEWS MODE - TMDB
+  const data=await searchMulti(q);
+  if(!data||!data.results||!data.results.length){document.getElementById('searchContent').innerHTML='<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>';return}
+  const movies=(data.results||[]).filter(r=>r.media_type==='movie');
+  const tvs=(data.results||[]).filter(r=>r.media_type==='tv');
+  const people=(data.results||[]).filter(r=>r.media_type==='person');
+  if(people.length){h+=`<div class="section-header"><div class="section-title">Personen</div></div><div class="person-results" style="margin-bottom:24px">`;people.slice(0,5).forEach(p=>{const kf=(p.known_for||[]).map(k=>k.title||k.name).slice(0,3).join(', ');h+=`<div class="person-result-card" onclick="openPerson(${p.id})"><div class="person-result-photo">${p.profile_path?`<img src="${posterUrl(p.profile_path,'w185')}">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">👤</div>`}</div><div class="person-result-info"><h4>${p.name}</h4><p>${p.known_for_department||''}${kf?' · '+kf:''}</p></div></div>`});h+=`</div>`}
+  if(tvs.length){h+=`<div class="section-header"><div class="section-title">Serien</div></div><div class="search-results" style="margin-bottom:24px">${tvs.map(s=>createCard(s,'tv')).join('')}</div>`}
+  if(movies.length){h+=`<div class="section-header"><div class="section-title">Filme</div></div><div class="search-results" style="margin-bottom:24px">${movies.map(m=>createCard(m,'movie')).join('')}</div>`}
+  if(!h)h='<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>';
   document.getElementById('searchContent').innerHTML=h;
 }
 
@@ -681,13 +693,20 @@ async function openMusicDetailLFM(artist,album){
     var tags=(alb.tags?.tag||[]).map(function(t){return t.name});
     
     var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
-    // Find by various keys
-    var mid=musicCol['mb_'+mbid]?'mb_'+mbid:musicCol['lfm_'+art+'_'+title]?'lfm_'+art+'_'+title:'';
+    // Find existing entry by any key - match on artist+title
+    var mid='';
+    var titleLow=title.toLowerCase();
+    var artLow=art.toLowerCase();
+    Object.keys(musicCol).forEach(function(k){
+      var e=musicCol[k];
+      if((e.title||'').toLowerCase()===titleLow&&(e.artist||'').toLowerCase()===artLow) mid=k;
+    });
+    // Also check direct keys
+    if(!mid&&musicCol['mb_'+mbid]) mid='mb_'+mbid;
+    if(!mid&&musicCol['lfm_'+art+'_'+title]) mid='lfm_'+art+'_'+title;
     var isAdded=!!mid&&!!musicCol[mid];
     var mData=isAdded?musicCol[mid]:{};
-    
-    // Stars
-    var mRating=mData.userRating||0;
+    var saveId=mid||'lfm_'+art+'_'+title;
     var mFav=mData.favorite||false;
     var saveId=mid||'lfm_'+art+'_'+title;
     var starHtml='';
@@ -724,11 +743,29 @@ async function openMusicDetailLFM(artist,album){
 
 function addMusicLFM(artist,title,cover,category,btn){
   var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
-  var mid='lfm_'+artist+'_'+title;
-  musicCol[mid]={id:mid,title:title,artist:artist,year:'',cover:cover,category:category,userRating:0,favorite:false,lastModified:Date.now()};
-  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
-  btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
-  showToast('"'+title+'" → '+(category==='soundtrack'?'Soundtracks':'Alben'));
+  // Check if already exists under any key
+  var existingKey='';
+  var titleLow=title.toLowerCase();
+  var artLow=artist.toLowerCase();
+  Object.keys(musicCol).forEach(function(k){
+    var e=musicCol[k];
+    if((e.title||'').toLowerCase()===titleLow&&(e.artist||'').toLowerCase()===artLow) existingKey=k;
+  });
+  if(existingKey){
+    // Update existing entry
+    musicCol[existingKey].cover=cover||musicCol[existingKey].cover;
+    musicCol[existingKey].category=category;
+    musicCol[existingKey].lastModified=Date.now();
+    localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+    btn.classList.add('active');btn.textContent='✓ Aktualisiert';
+    showToast('"'+title+'" aktualisiert');
+  }else{
+    var mid='lfm_'+artist+'_'+title;
+    musicCol[mid]={id:mid,title:title,artist:artist,year:'',cover:cover,category:category,userRating:0,favorite:false,lastModified:Date.now()};
+    localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+    btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
+    showToast('"'+title+'" → '+(category==='soundtrack'?'Soundtracks':'Alben'));
+  }
   setTimeout(function(){openMusicDetailLFM(artist,title)},500);
 }
 
@@ -1541,7 +1578,7 @@ function renderCollection(f='all'){
       gamesView.innerHTML=`<div class="collection-grid">${filtered.map(m=>{
         const ms=m.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${m.userRating>=i?'filled':''}">★</span>`).join(''):'';
         const ht=m.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
-        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster" style="aspect-ratio:1/1">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
+        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster" style="aspect-ratio:1/1">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year" style="font-size:12px;font-weight:500">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
       }).join('')}</div>`;
       setupScrollingTitles();
     }
@@ -1733,6 +1770,14 @@ document.getElementById('modeToggle').addEventListener('click',e=>{
   btn.classList.add('active');
   collectionMode=btn.dataset.mode;
   updateFilters(collectionMode);
+  // Update search placeholder
+  var ph=document.getElementById('collectionSearch');
+  if(ph){
+    if(collectionMode==='music')ph.placeholder='Künstler oder Album suchen...';
+    else if(collectionMode==='games')ph.placeholder='Spiel suchen...';
+    else if(collectionMode==='series')ph.placeholder='Serie suchen...';
+    else ph.placeholder='Film, Serie, Schauspieler...';
+  }
   if(collectionMode==='news'){
     renderCollection('alle');
   }else{
