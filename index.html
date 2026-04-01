@@ -1578,7 +1578,8 @@ function renderCollection(f='all'){
       gamesView.innerHTML=`<div class="collection-grid">${filtered.map(m=>{
         const ms=m.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${m.userRating>=i?'filled':''}">★</span>`).join(''):'';
         const ht=m.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
-        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster" style="aspect-ratio:1/1">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year" style="font-size:12px;font-weight:500">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
+        const safeId=(m.id||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        return `<div class="collection-item" onclick="openMusicDetail('${safeId}')"><div class="collection-poster" style="aspect-ratio:1/1">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year" style="font-size:12px;font-weight:500">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
       }).join('')}</div>`;
       setupScrollingTitles();
     }
@@ -2981,6 +2982,50 @@ async function cacheAllCovers(){
 
 // Register Service Worker for offline caching
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+
+
+// Migrate old music entries - remove duplicates, keep ratings
+(function(){
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  var changed=false;
+  var byTitle={};
+  // Group by artist+title
+  Object.keys(musicCol).forEach(function(k){
+    var e=musicCol[k];
+    var key=(e.artist||'').toLowerCase()+'|||'+(e.title||'').toLowerCase();
+    if(!byTitle[key])byTitle[key]=[];
+    byTitle[key].push(k);
+  });
+  // For groups with multiple entries, keep the best one
+  Object.keys(byTitle).forEach(function(key){
+    var keys=byTitle[key];
+    if(keys.length<=1)return;
+    // Find the one with highest rating or favorite
+    var bestKey=keys[0];
+    var bestRating=musicCol[keys[0]].userRating||0;
+    var bestFav=musicCol[keys[0]].favorite||false;
+    for(var i=1;i<keys.length;i++){
+      var r=musicCol[keys[i]].userRating||0;
+      var f=musicCol[keys[i]].favorite||false;
+      if(r>bestRating||(f&&!bestFav)){bestKey=keys[i];bestRating=r;bestFav=f}
+    }
+    // Merge best rating into winner and delete others
+    for(var i=0;i<keys.length;i++){
+      if(keys[i]!==bestKey){
+        // Copy over any better data
+        var old=musicCol[keys[i]];
+        var best=musicCol[bestKey];
+        if((old.userRating||0)>(best.userRating||0))best.userRating=old.userRating;
+        if(old.favorite&&!best.favorite)best.favorite=true;
+        if(old.cover&&!best.cover)best.cover=old.cover;
+        if(old.year&&!best.year)best.year=old.year;
+        delete musicCol[keys[i]];
+        changed=true;
+      }
+    }
+  });
+  if(changed)localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+})();
 
 // Init - collection is the start page
 currentTab='collection';collectionMode='movies';
