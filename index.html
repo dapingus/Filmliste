@@ -1049,7 +1049,7 @@ function renderCollection(f='all'){
       
       if(selectedSub){
         const subGames=pcGames.filter(g=>g.subPlatform===selectedSub||(g.savedPlatforms||[]).includes('PC ('+selectedSub+')'));
-        setCounter(subGames.length,selectedSub);
+        setCounter(subGames.length,selectedSub+' Games');
         if(!subGames.length){
           gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">💻</div><p>Keine ${selectedSub}-Spiele.</p></div>`;
         }else{
@@ -1072,6 +1072,7 @@ function renderCollection(f='all'){
           return `<div onclick="document.getElementById('gamesView').dataset.pcsub='${s.sub}';renderCollection('pc')" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 30px 16px;text-align:center;cursor:pointer;transition:all 0.2s;min-width:140px" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border)'">
             <img src="icon-${s.id}.png" alt="${s.name}" style="width:64px;height:64px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:32px;margin-bottom:8px">${s.id==='steam'?'🎮':'💾'}</div>
             <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">${s.name}</div>
+            <div style="font-size:10px;color:var(--gold-dim);margin-top:4px">${pcGames.filter(g=>g.subPlatform===s.sub||(g.savedPlatforms||[]).includes('PC ('+s.sub+')')).length} Games</div>
             </div>`;
         }).join('')}</div>${uncatGames.length?`<div style="margin-bottom:10px;font-size:14px;color:var(--gold-dim);font-weight:600;font-family:var(--font-display)">Nicht zugeordnet (${uncatGames.length})</div><div class="collection-grid">${uncatGames.map(g=>{const ms=g.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${g.userRating>=i?'filled':''}">★</span>`).join(''):'';const ht=g.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';return `<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`}).join('')}</div>`:''}`;
         if(uncatGames.length)setupScrollingTitles();
@@ -1099,7 +1100,7 @@ function renderCollection(f='all'){
       if(selectedConsole){
         const cName=consoles.find(c=>c.id===selectedConsole)?.name||selectedConsole;
         const cGames=allGames.filter(g=>g.platform===cName||(g.savedPlatforms||[]).includes(cName));
-        setCounter(cGames.length,cName);
+        setCounter(cGames.length,cName+' Games');
         if(!cGames.length){
           gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎮</div><p>Keine ${cName}-Spiele.</p></div>`;
         }else{
@@ -1112,7 +1113,7 @@ function renderCollection(f='all'){
       }else{
         // Show console grid
         const totalGames=allGames.filter(g=>g.platform!=='PC').length;
-        setCounter(totalGames,'Konsolen-Spiele');
+        setCounter(totalGames,'Konsolen Games');
         gamesView.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px">${consoles.map(c=>{
           const count=allGames.filter(g=>g.platform===c.name).length;
           return `<div onclick="document.getElementById('gamesView').dataset.console='${c.id}';renderCollection('console')" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 10px 14px;text-align:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border)'">
