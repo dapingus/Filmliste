@@ -578,14 +578,60 @@ async function openGameDetail(id){
     if(wikiRes.ok){const wikiData=await wikiRes.json();if(wikiData.extract)deDesc=wikiData.extract}
   }catch(e){}
   
+  // Star rating and heart for games
+  const gameData=isAdded?gamesCol[gid]:{};
+  const gRating=gameData.userRating||0;
+  const gFav=gameData.favorite||false;
+  const gameStars=[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="star ${gRating>=i?'filled':''}" onclick="rateGame(${game.id},${i},this)">${gRating>=i?'★':'☆'}</span>`).join('');
+  const gameRl=gRating?`<span class="star-rating-label">${gRating}/10</span>`:'';
+  const gameHeart=isAdded?`<span onclick="toggleGameFavorite(${game.id},this);event.stopPropagation()" style="cursor:pointer;font-size:24px;margin-left:10px;color:${gFav?'#e04060':'#555'};transition:all 0.2s">❤</span>`:'';
+  const starRow=isAdded?`<div class="star-rating">${gameStars}${gameRl}${gameHeart}</div>`:'';
+
   content.innerHTML=`<div class="modal-backdrop">${game.background_image?`<img src="${game.background_image}">`:''}
     <button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="modal-movie-title">${game.name}</div>
     <div class="modal-meta">${yr?`<span>${yr}</span>`:''}${devs?`<span>${devs}</span>`:''}${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
     ${platInfo}
+    ${starRow}
     ${deDesc?`<div class="modal-overview">${deDesc}</div>`:''}
     ${actionArea}
     </div>`;
+}
+
+function rateGame(rawgId,r,el){
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const gid='rawg_'+rawgId;
+  if(!gamesCol[gid])return;
+  gamesCol[gid].userRating=gamesCol[gid].userRating===r?0:r;
+  if(gamesCol[gid].userRating<10)gamesCol[gid].favorite=false;
+  gamesCol[gid].lastModified=Date.now();
+  localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+  const rating=gamesCol[gid].userRating;
+  const c=el.parentElement;
+  c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<rating);s.textContent=i<rating?'★':'☆'});
+  let l=c.querySelector('.star-rating-label');
+  if(rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${rating}/10`}else if(l)l.remove();
+  const heart=c.querySelector('span[onclick*="toggleGameFavorite"]');
+  if(heart)heart.style.color=gamesCol[gid].favorite?'#e04060':'#555';
+  if(rating)showToast(`${rating}/10`);
+}
+
+function toggleGameFavorite(rawgId,el){
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const gid='rawg_'+rawgId;
+  if(!gamesCol[gid])return;
+  gamesCol[gid].favorite=!gamesCol[gid].favorite;
+  if(gamesCol[gid].favorite)gamesCol[gid].userRating=10;
+  gamesCol[gid].lastModified=Date.now();
+  localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+  el.style.color=gamesCol[gid].favorite?'#e04060':'#555';
+  if(gamesCol[gid].favorite){
+    showToast('❤️ Favorit! · 10/10');
+    el.parentElement.querySelectorAll('.star').forEach(s=>{s.classList.add('filled');s.textContent='★'});
+    let l=el.parentElement.querySelector('.star-rating-label');
+    if(!l){l=document.createElement('span');l.className='star-rating-label';el.parentElement.insertBefore(l,el)}
+    l.textContent='10/10';
+  }else{showToast('Favorit entfernt')}
 }
 
 function toggleGamePlat(rawgId,platName,btn){
@@ -1007,7 +1053,7 @@ function renderCollection(f='all'){
         if(!subGames.length){
           gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">💻</div><p>Keine ${selectedSub}-Spiele.</p></div>`;
         }else{
-          gamesView.innerHTML=`<div class="collection-grid">${subGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+          gamesView.innerHTML=`<div class="collection-grid">${subGames.map(g=>{const ms=g.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${g.userRating>=i?'filled':''}">★</span>`).join(''):'';const ht=g.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';return `<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`}).join('')}</div>`;
           setupScrollingTitles();
         }
       }else{
@@ -1026,9 +1072,8 @@ function renderCollection(f='all'){
           return `<div onclick="document.getElementById('gamesView').dataset.pcsub='${s.sub}';renderCollection('pc')" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 30px 16px;text-align:center;cursor:pointer;transition:all 0.2s;min-width:140px" onmouseover="this.style.borderColor='var(--gold-dim)'" onmouseout="this.style.borderColor='var(--border)'">
             <img src="icon-${s.id}.png" alt="${s.name}" style="width:64px;height:64px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:32px;margin-bottom:8px">${s.id==='steam'?'🎮':'💾'}</div>
             <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">${s.name}</div>
-            ${count?`<div style="font-size:10px;color:var(--gold-dim);margin-top:4px">${count} Spiele</div>`:''}
-          </div>`;
-        }).join('')}</div>${uncatGames.length?`<div style="margin-bottom:10px;font-size:14px;color:var(--gold-dim);font-weight:600;font-family:var(--font-display)">Nicht zugeordnet (${uncatGames.length})</div><div class="collection-grid">${uncatGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`:''}`;
+            </div>`;
+        }).join('')}</div>${uncatGames.length?`<div style="margin-bottom:10px;font-size:14px;color:var(--gold-dim);font-weight:600;font-family:var(--font-display)">Nicht zugeordnet (${uncatGames.length})</div><div class="collection-grid">${uncatGames.map(g=>{const ms=g.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${g.userRating>=i?'filled':''}">★</span>`).join(''):'';const ht=g.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';return `<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`}).join('')}</div>`:''}`;
         if(uncatGames.length)setupScrollingTitles();
       }
     }else{
@@ -1053,13 +1098,15 @@ function renderCollection(f='all'){
       const selectedConsole=document.getElementById('gamesView')?.dataset?.console;
       if(selectedConsole){
         const cName=consoles.find(c=>c.id===selectedConsole)?.name||selectedConsole;
-        const cGames=allGames.filter(g=>g.platform===cName);
+        const cGames=allGames.filter(g=>g.platform===cName||(g.savedPlatforms||[]).includes(cName));
         setCounter(cGames.length,cName);
-        let backBtn=`<div style="margin-bottom:12px"><button onclick="document.getElementById('gamesView').dataset.console='';renderCollection('console')" style="padding:8px 16px;border-radius:18px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:var(--font-body);font-size:13px;cursor:pointer">← Alle Konsolen</button></div>`;
         if(!cGames.length){
-          gamesView.innerHTML=backBtn+`<div class="empty-state"><div class="empty-icon">🎮</div><p>Keine ${cName}-Spiele.<br>Lade eine Liste mit Spielname\\${selectedConsole}</p></div>`;
+          gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎮</div><p>Keine ${cName}-Spiele.</p></div>`;
         }else{
-          gamesView.innerHTML=backBtn+`<div class="collection-grid">${cGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+          gamesView.innerHTML=`<div class="collection-grid">${cGames.map(g=>{
+            const ms=g.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${g.userRating>=i?'filled':''}">★</span>`).join(''):'';
+            const heart=g.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
+            return `<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div>${ms?`<div class="collection-stars">${ms}${heart}</div>`:(heart?`<div class="collection-stars">${heart}</div>`:'')}</div></div>`}).join('')}</div>`;
           setupScrollingTitles();
         }
       }else{
@@ -1354,8 +1401,8 @@ function openGameSettings(){
   const tiles=allPlats.map(([id,name])=>{
     const isOn=cons[id]===true;
     return `<div data-platid="${id}" onclick="toggleGameSetting('${id}')" style="background:var(--bg-card);border:2px solid ${isOn?'var(--accent-green)':'var(--border)'};border-radius:var(--radius);padding:18px 10px 16px;text-align:center;cursor:pointer;position:relative">
-      <div data-dot style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;border:2.5px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
-      <img src="icon-${id}.png" style="width:72px;height:72px;object-fit:contain;margin-bottom:10px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:40px;margin-bottom:10px">🎮</div>
+      <div data-dot style="position:absolute;top:8px;right:8px;width:12px;height:12px;border-radius:50%;border:2px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
+      <img src="icon-${id}.png" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:40px;margin-bottom:10px">🎮</div>
       <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.2">${name}</div>
     </div>`;
   }).join('');
