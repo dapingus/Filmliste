@@ -378,9 +378,8 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div id="lastExportInfo" style="font-size:13px;color:var(--gold-dim);margin-bottom:14px;font-weight:500"></div>
-    <button class="settings-btn" onclick="startSwipeMode()" style="margin:0 0 4px">▶️ Film-Checker</button>
-    <div id="swipeProgress" style="font-size:13px;color:var(--gold);margin-bottom:8px;font-weight:500"></div>
-    <button class="settings-btn" onclick="closeSettings();showReviewGrid()" style="margin:0 0 8px">🔍 Nochmal prüfen <span id="reviewCount" style="font-size:12px;color:var(--text-muted)"></span></button>
+    <button class="settings-btn" onclick="startSwipeMode()" style="margin:0 0 8px">▶️ Checker <span id="swipeCount" style="font-size:12px;color:var(--gold)"></span></button>
+    <button class="settings-btn" onclick="closeSettings();showReviewGrid()" style="margin:0 0 8px">🔍 Nochmal prüfen <span id="reviewCount" style="font-size:12px;color:var(--gold)"></span></button>
     <button class="settings-btn" onclick="document.getElementById('listFile').click()" style="margin:0 0 12px">📄 Liste laden (Textdatei)</button>
     <input type="file" id="listFile" accept=".txt,.csv,.text" style="display:none" onchange="importList(event)">
     <button class="settings-btn" onclick="cacheAllCovers()" style="margin:0 0 4px">💾 Daten lokal speichern</button>
@@ -1502,11 +1501,10 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(b=>{if(b.dataset.tab!==
 function openSettings(){
   document.getElementById('settingsOverlay').classList.add('open');updateExportInfo();
   const unsorted=Object.entries(collection).filter(([,d])=>d.movieInfo&&!d.seen&&!d.watchlist&&!d.review);
-  const sp=document.getElementById('swipeProgress');if(sp)sp.textContent=unsorted.length?`${unsorted.length} Filme noch zu sortieren`:'Keine unsortierten Filme.';
-  // Review count
+  const sc=document.getElementById('swipeCount');if(sc)sc.textContent=unsorted.length?` / noch ${unsorted.length}`:'';
   const rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
   const rc=document.getElementById('reviewCount');
-  if(rc)rc.textContent=rl.length?`(${rl.length})`:'';
+  if(rc)rc.textContent=rl.length?` / noch ${rl.length}`:'';
   // Category toggles
   const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
   const ct=document.getElementById('categoryToggles');
@@ -1649,20 +1647,15 @@ function showReviewGrid(){
     const title=m.title||'';
     const yr=(m.release_date||'').split('-')[0];
     const orig=m.originalName&&m.originalName.toLowerCase()!==title.toLowerCase()?m.originalName:'';
-    const d=collection[m.id]||{};
-    const rating=d.rating||0;
-    const stars=[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${rating>=i?'filled':''}" onclick="event.stopPropagation();reviewRate(${idx},${m.id},${i})" style="cursor:pointer">★</span>`).join('');
-    const heart=`<span onclick="event.stopPropagation();reviewHeart(${idx},${m.id},this)" style="cursor:pointer;font-size:13px;margin-left:3px;color:${d.favorite?'#e04060':'#555'}">❤</span>`;
     return `<div class="collection-item" style="position:relative">
       <div class="collection-poster">${m.poster_path?`<img src="${posterUrl(m.poster_path,'w342')}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${title}</div>`}</div>
       <div class="collection-info">
         <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
         <div class="collection-year">${yr}</div>
         ${orig?`<div style="font-size:10px;color:var(--gold-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Liste: ${orig}</div>`:''}
-        <div class="collection-stars" style="margin-top:3px">${stars}${rating?`<span style="font-size:10px;color:var(--gold);margin-left:2px">${rating}/10</span>`:''}${heart}</div>
       </div>
       <div style="display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap">
-        <button onclick="reviewAction(${idx},'seen')" style="padding:5px 10px;border-radius:14px;border:1px solid var(--accent-green);background:transparent;color:var(--accent-green);font-size:11px;cursor:pointer;font-family:var(--font-body)">✓ Gesehen</button>
+        <button onclick="reviewRatePopup(${idx})" style="padding:5px 10px;border-radius:14px;border:1px solid var(--accent-green);background:transparent;color:var(--accent-green);font-size:11px;cursor:pointer;font-family:var(--font-body)">✓ Gesehen</button>
         <button onclick="reviewAction(${idx},'watchlist')" style="padding:5px 10px;border-radius:14px;border:1px solid var(--accent-blue);background:transparent;color:var(--accent-blue);font-size:11px;cursor:pointer;font-family:var(--font-body)">📌</button>
         <button onclick="reviewAction(${idx},'search')" style="padding:5px 8px;border-radius:14px;border:1px solid var(--text-muted);background:transparent;color:var(--text-muted);font-size:11px;cursor:pointer">🔍</button>
         <button onclick="reviewAction(${idx},'delete')" style="padding:5px 8px;border-radius:14px;border:1px solid #c94040;background:transparent;color:#c94040;font-size:11px;cursor:pointer">🗑️</button>
@@ -1673,36 +1666,84 @@ function showReviewGrid(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function reviewRate(idx,movieId,r){
-  const d=getMovieData(movieId);
-  d.rating=d.rating===r?0:r;
-  if(d.rating)d.seen=true;
-  if(d.rating<10)d.favorite=false;
-  d.movieInfo=d.movieInfo||collection[movieId]?.movieInfo;
-  setMovieData(movieId,d);
-  // If rated, remove from review
-  if(d.rating){
-    let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
-    rl.splice(idx,1);
-    localStorage.setItem('filmothek_review',JSON.stringify(rl));
-    showToast(`${d.rating}/10 · Gesehen ✓`);
-    showReviewGrid();
-  }else{showReviewGrid()}
+function reviewRatePopup(idx){
+  const rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  if(idx>=rl.length)return;
+  const m=rl[idx];
+  
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove()};
+  
+  overlay.innerHTML=`<div style="background:var(--bg-primary);border:1.5px solid var(--border);border-radius:16px;padding:24px;max-width:340px;width:90%;text-align:center">
+    <div style="font-family:var(--font-display);font-size:18px;color:var(--text-primary);margin-bottom:4px">${m.title}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">${(m.release_date||'').split('-')[0]}</div>
+    <div style="margin-bottom:16px">
+      ${[1,2,3,4,5,6,7,8,9,10].map(i=>`<span onclick="reviewConfirmRate(${idx},${i},this)" style="font-size:28px;cursor:pointer;color:var(--text-muted);transition:color 0.1s" onmouseover="this.style.color='var(--gold)'" onmouseout="if(!this.classList.contains('sel'))this.style.color='var(--text-muted)'">☆</span>`).join('')}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="reviewConfirmHeart(${idx})" style="padding:10px 20px;border-radius:20px;border:1.5px solid #e04060;background:transparent;color:#e04060;font-family:var(--font-body);font-size:14px;cursor:pointer">❤ 10/10</button>
+      <button onclick="reviewConfirmNoRate(${idx})" style="padding:10px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-family:var(--font-body);font-size:13px;cursor:pointer">Ohne Bewertung</button>
+    </div>
+  </div>`;
+  
+  document.body.appendChild(overlay);
 }
 
-function reviewHeart(idx,movieId,el){
-  const d=getMovieData(movieId);
-  d.favorite=!d.favorite;
-  if(d.favorite){d.rating=10;d.seen=true}
-  d.movieInfo=d.movieInfo||collection[movieId]?.movieInfo;
-  setMovieData(movieId,d);
-  // Remove from review
+function reviewConfirmRate(idx,r,el){
+  // Visual feedback
+  const stars=el.parentElement.querySelectorAll('span');
+  stars.forEach((s,i)=>{s.textContent=i<r?'★':'☆';s.style.color=i<r?'var(--gold)':'var(--text-muted)';if(i<r)s.classList.add('sel');else s.classList.remove('sel')});
+  
+  // Save and remove from review
+  setTimeout(()=>{
+    let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+    if(idx>=rl.length)return;
+    const m=rl[idx];
+    const d=getMovieData(m.id);
+    d.seen=true;d.rating=r;if(r<10)d.favorite=false;
+    d.movieInfo={id:m.id,title:m.title,poster_path:m.poster_path,release_date:m.release_date,vote_average:m.vote_average,type:'movie',originalName:m.originalName};
+    setMovieData(m.id,d);
+    rl.splice(idx,1);
+    localStorage.setItem('filmothek_review',JSON.stringify(rl));
+    document.querySelector('[style*="backdrop-filter"]')?.remove();
+    showToast(`"${m.title}" → ${r}/10 · Gesehen ✓`);
+    if(rl.length)showReviewGrid();else renderCollection('seen');
+  },300);
+}
+
+function reviewConfirmHeart(idx){
   let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  if(idx>=rl.length)return;
+  const m=rl[idx];
+  const d=getMovieData(m.id);
+  d.seen=true;d.rating=10;d.favorite=true;
+  d.movieInfo={id:m.id,title:m.title,poster_path:m.poster_path,release_date:m.release_date,vote_average:m.vote_average,type:'movie',originalName:m.originalName};
+  setMovieData(m.id,d);
   rl.splice(idx,1);
   localStorage.setItem('filmothek_review',JSON.stringify(rl));
-  showToast('❤️ 10/10 · Gesehen ✓');
-  showReviewGrid();
+  document.querySelector('[style*="backdrop-filter"]')?.remove();
+  showToast(`"${m.title}" → ❤️ 10/10 · Gesehen ✓`);
+  if(rl.length)showReviewGrid();else renderCollection('seen');
 }
+
+function reviewConfirmNoRate(idx){
+  let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+  if(idx>=rl.length)return;
+  const m=rl[idx];
+  const d=getMovieData(m.id);
+  d.seen=true;
+  d.movieInfo={id:m.id,title:m.title,poster_path:m.poster_path,release_date:m.release_date,vote_average:m.vote_average,type:'movie',originalName:m.originalName};
+  setMovieData(m.id,d);
+  rl.splice(idx,1);
+  localStorage.setItem('filmothek_review',JSON.stringify(rl));
+  document.querySelector('[style*="backdrop-filter"]')?.remove();
+  showToast(`"${m.title}" → Gesehen ✓`);
+  if(rl.length)showReviewGrid();else renderCollection('seen');
+}
+
+function reviewRate(idx,movieId,r){}
+function reviewHeart(idx,movieId,el){}
 
 function reviewAction(idx,action){
   let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
