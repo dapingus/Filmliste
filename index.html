@@ -467,8 +467,8 @@ function createCard(item,type){
 
 // Search
 const searchInputTop=document.getElementById('searchInputTop');
-function handleSearch(v){clearTimeout(searchTimeout);searchInputTop.value=v;if(v.length<2){if(currentTab==='search')document.getElementById('searchContent').innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><p>Suche nach Filmen, Serien<br>oder Schauspielern</p></div>';return}switchTab('search');document.getElementById('searchContent').innerHTML='<div class="loading"><div class="spinner"></div></div>';searchTimeout=setTimeout(()=>performSearch(v),400)}
-searchInputTop.addEventListener('input',()=>handleSearch(searchInputTop.value.trim()));
+function handleSearch(v){clearTimeout(searchTimeout);if(v.length<2){if(currentTab==='search')document.getElementById('searchContent').innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><p>Suche nach Filmen, Serien<br>oder Schauspielern</p></div>';return}switchTab('search');document.getElementById('searchContent').innerHTML='<div class="loading"><div class="spinner"></div></div>';searchTimeout=setTimeout(()=>performSearch(v.trim()),400)}
+searchInputTop.addEventListener('input',()=>handleSearch(searchInputTop.value));
 
 async function performSearch(q){
   const data=await searchMulti(q);
