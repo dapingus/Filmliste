@@ -717,9 +717,16 @@ function removeFromReviewById(id){
   rl=rl.filter(m=>m.id!==id);
   if(rl.length!==before)localStorage.setItem('filmothek_review',JSON.stringify(rl));
 }
-function toggleSeen(id,btn,t,p,d,r){const x=getMovieData(id);x.seen=!x.seen;if(x.seen){x.watchlist=false;removeFromReviewById(id)}x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');
+function toggleSeen(id,btn,t,p,d,r){const x=getMovieData(id);x.seen=!x.seen;if(x.seen){x.watchlist=false;removeFromReviewById(id)}else{x.rating=0;x.favorite=false}x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');
   const wlBtn=btn.parentElement.querySelector('.action-btn.watchlist');
   if(wlBtn&&x.seen)wlBtn.classList.remove('active');
+  if(!x.seen){
+    // Reset stars display
+    const stars=document.querySelectorAll('.star-rating .star');stars.forEach(s=>{s.classList.remove('filled');s.textContent='☆'});
+    const lbl=document.querySelector('.star-rating-label');if(lbl)lbl.remove();
+    // Reset heart display
+    const heart=document.querySelector('.star-rating span[onclick*="toggleFavorite"]');if(heart)heart.style.color='#555';
+  }
   showToast(x.seen?`"${t}" gesehen`:`"${t}" nicht gesehen`)}
 function toggleWatchlist(id,btn,t,p,d,r){const x=getMovieData(id);x.watchlist=!x.watchlist;if(x.watchlist)removeFromReviewById(id);x.movieInfo=mki(id,t,p,d,r);setMovieData(id,x);btn.classList.toggle('active');showToast(x.watchlist?`"${t}" auf Watchlist`:`"${t}" entfernt`)}
 function toggleSeriesWatchlist(id,btn,name,poster,date,rating,seasons){
@@ -798,8 +805,13 @@ function showRandomSuggestion(){
     </div></div></div>`;
   setupScrollingTitles();
 }
-function rateMovie(id,r,el){const mi=JSON.parse(el.dataset.movie||'{}'),d=getMovieData(id);d.rating=d.rating===r?0:r;d.movieInfo=mi;if(d.rating)d.seen=true;setMovieData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();if(d.rating){showToast(`${d.rating}/10 · Gesehen ✓`);const sb=document.querySelector('.action-btn.seen');if(sb)sb.classList.add('active')}else{showToast('Bewertung entfernt')}}
-function rateSeries(id,r,el){const si=JSON.parse(el.dataset.series||'{}'),d=getSeriesData(id);d.rating=d.rating===r?0:r;d.seriesInfo=si;setSeriesData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();if(d.rating)showToast(`${d.rating}/10`)}
+function rateMovie(id,r,el){const mi=JSON.parse(el.dataset.movie||'{}'),d=getMovieData(id);d.rating=d.rating===r?0:r;d.movieInfo=mi;if(d.rating)d.seen=true;if(d.rating<10)d.favorite=false;setMovieData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();
+  // Update heart display
+  const heart=c.querySelector('span[onclick*="toggleFavorite"]');if(heart)heart.style.color=d.favorite?'#e04060':'#555';
+  if(d.rating){showToast(`${d.rating}/10 · Gesehen ✓`);const sb=document.querySelector('.action-btn.seen');if(sb)sb.classList.add('active')}else{showToast('Bewertung entfernt')}}
+function rateSeries(id,r,el){const si=JSON.parse(el.dataset.series||'{}'),d=getSeriesData(id);d.rating=d.rating===r?0:r;d.seriesInfo=si;if(d.rating<10)d.favorite=false;setSeriesData(id,d);const c=el.parentElement;c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<d.rating);s.textContent=i<d.rating?'★':'☆'});let l=c.querySelector('.star-rating-label');if(d.rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${d.rating}/10`}else if(l)l.remove();
+  const heart=c.querySelector('span[onclick*="toggleSeriesFavorite"]');if(heart)heart.style.color=d.favorite?'#e04060':'#555';
+  if(d.rating)showToast(`${d.rating}/10`)}
 
 // Collection
 function getSeriesProgress(d){
