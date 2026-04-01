@@ -538,8 +538,18 @@ async function openGameDetail(id){
   const addBtns=platforms.map(p=>{
     const mapped=platformMap[p]||p;
     const alreadyOnPlatform=isAdded&&gamesCol[gid]?.platform===mapped;
-    return `<button onclick="addGameToCollection(${game.id},'${mapped.replace(/'/g,"\\'")}',this)" class="action-btn ${alreadyOnPlatform?'seen active':''}" style="font-size:12px;padding:8px 14px">${alreadyOnPlatform?'✓ ':''} ${p}</button>`;
+    return `<button onclick="toggleGamePlatform(${game.id},'${mapped.replace(/'/g,"\\'")}',this)" class="action-btn ${alreadyOnPlatform?'seen active':''}" style="font-size:12px;padding:8px 14px">${alreadyOnPlatform?'✓ ':''}${p}</button>`;
   }).join('');
+  
+  // PC sub-categories if platform is PC
+  const pcSubBtns=isAdded&&gamesCol[gid]?.platform==='PC'?`
+    <div style="margin-top:12px">
+      <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-dim);margin-bottom:6px">PC-Kategorie:</div>
+      <div class="action-row" style="flex-wrap:wrap">
+        <button onclick="setGameSubPlatform(${game.id},'Digital',this)" class="action-btn ${gamesCol[gid]?.subPlatform==='Digital'?'seen active':''}" style="font-size:12px;padding:8px 14px">${gamesCol[gid]?.subPlatform==='Digital'?'✓ ':''}Digital</button>
+        <button onclick="setGameSubPlatform(${game.id},'Steam',this)" class="action-btn ${gamesCol[gid]?.subPlatform==='Steam'?'seen active':''}" style="font-size:12px;padding:8px 14px">${gamesCol[gid]?.subPlatform==='Steam'?'✓ ':''}Steam</button>
+      </div>
+    </div>`:'';
   
   content.innerHTML=`<div class="modal-backdrop">${game.background_image?`<img src="${game.background_image}">`:''}
     <button class="modal-close" onclick="closeModal()">✕</button></div>
@@ -547,17 +557,29 @@ async function openGameDetail(id){
     <div class="modal-meta">${yr?`<span>${yr}</span>`:''}${devs?`<span>${devs}</span>`:''}${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
     ${game.description_raw?`<div class="modal-overview">${game.description_raw.slice(0,500)}${game.description_raw.length>500?'...':''}</div>`:''}
     <div style="margin-bottom:16px">
-      <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">Zu Plattform hinzufügen:</div>
-      <div class="action-row" style="flex-wrap:wrap">${addBtns}</div>
+      <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">Plattform wählen:</div>
+      <div class="action-row" style="flex-wrap:wrap" id="gamePlatformBtns">${addBtns}</div>
+      <div id="pcSubBtns">${pcSubBtns}</div>
     </div>
     </div>`;
 }
 
-function addGameToCollection(rawgId,platform,btn){
+function toggleGamePlatform(rawgId,platform,btn){
   const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
   const gid='rawg_'+rawgId;
   
-  // Fetch game info if not cached
+  if(gamesCol[gid]&&gamesCol[gid].platform===platform){
+    // Remove from this platform
+    delete gamesCol[gid];
+    localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+    btn.classList.remove('active');
+    btn.textContent=btn.textContent.replace('✓ ','');
+    document.getElementById('pcSubBtns').innerHTML='';
+    showToast('Spiel entfernt');
+    return;
+  }
+  
+  // Add or change platform
   fetch(`https://api.rawg.io/api/games/${rawgId}?key=0456e26e4378414398fa767657c083ea`)
     .then(r=>r.json()).then(game=>{
       gamesCol[gid]={
@@ -566,15 +588,67 @@ function addGameToCollection(rawgId,platform,btn){
         released:game.released,
         rating:game.rating,
         platform:platform,
+        subPlatform:null,
         platforms:(game.platforms||[]).map(p=>p.platform.name),
         genres:(game.genres||[]).map(g=>g.name),
-        originalName:game.name
+        originalName:game.name,
+        lastModified:Date.now()
       };
       localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+      // Update all buttons
+      document.querySelectorAll('#gamePlatformBtns .action-btn').forEach(b=>{
+        b.classList.remove('active');
+        b.textContent=b.textContent.replace('✓ ','');
+      });
       btn.classList.add('active');
-      btn.innerHTML='✓ '+btn.textContent.trim();
+      btn.textContent='✓ '+btn.textContent;
+      // Show PC sub-buttons if PC selected
+      if(platform==='PC'){
+        document.getElementById('pcSubBtns').innerHTML=`<div style="margin-top:12px">
+          <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-dim);margin-bottom:6px">PC-Kategorie:</div>
+          <div class="action-row" style="flex-wrap:wrap">
+            <button onclick="setGameSubPlatform(${rawgId},'Digital',this)" class="action-btn" style="font-size:12px;padding:8px 14px">Digital</button>
+            <button onclick="setGameSubPlatform(${rawgId},'Steam',this)" class="action-btn" style="font-size:12px;padding:8px 14px">Steam</button>
+          </div></div>`;
+      }else{
+        document.getElementById('pcSubBtns').innerHTML='';
+      }
       showToast(`"${game.name}" → ${platform}`);
-    }).catch(()=>showToast('Fehler beim Hinzufügen'));
+    }).catch(()=>showToast('Fehler'));
+}
+
+function setGameSubPlatform(rawgId,sub,btn){
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const gid='rawg_'+rawgId;
+  if(!gamesCol[gid])return;
+  
+  // Toggle
+  if(gamesCol[gid].subPlatform===sub){
+    gamesCol[gid].subPlatform=null;
+    btn.classList.remove('active');
+    btn.textContent=btn.textContent.replace('✓ ','');
+  }else{
+    gamesCol[gid].subPlatform=sub;
+    // Reset all sub-buttons
+    btn.parentElement.querySelectorAll('.action-btn').forEach(b=>{
+      b.classList.remove('active');
+      b.textContent=b.textContent.replace('✓ ','');
+    });
+    btn.classList.add('active');
+    btn.textContent='✓ '+btn.textContent;
+  }
+  gamesCol[gid].lastModified=Date.now();
+  localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+  showToast(gamesCol[gid].subPlatform?`→ ${sub}`:'Kategorie entfernt');
+}
+
+// Open game detail from collection
+function openCollectionGame(gid){
+  const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+  const g=gamesCol[gid];
+  if(!g)return;
+  // Use RAWG ID to open full detail
+  openGameDetail(g.id);
 }
 
 // Movie Detail
@@ -896,7 +970,7 @@ function renderCollection(f='all'){
       if(!pcGames.length){
         gamesView.innerHTML='<div class="empty-state"><div class="empty-icon">💻</div><p>Keine PC-Spiele.<br>Lade eine Liste mit Spielname\\PC</p></div>';
       }else{
-        gamesView.innerHTML=`<div class="collection-grid">${pcGames.map(g=>`<div class="collection-item"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+        gamesView.innerHTML=`<div class="collection-grid">${pcGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}${g.subPlatform?' · '+g.subPlatform:''}</div></div></div>`).join('')}</div>`;
         setupScrollingTitles();
       }
     }else{
@@ -927,7 +1001,7 @@ function renderCollection(f='all'){
         if(!cGames.length){
           gamesView.innerHTML=backBtn+`<div class="empty-state"><div class="empty-icon">🎮</div><p>Keine ${cName}-Spiele.<br>Lade eine Liste mit Spielname\\${selectedConsole}</p></div>`;
         }else{
-          gamesView.innerHTML=backBtn+`<div class="collection-grid">${cGames.map(g=>`<div class="collection-item"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
+          gamesView.innerHTML=backBtn+`<div class="collection-grid">${cGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`;
           setupScrollingTitles();
         }
       }else{
