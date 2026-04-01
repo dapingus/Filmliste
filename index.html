@@ -278,7 +278,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area
   <div class="tab-content" id="tab-search">
     <div class="search-container" style="padding-top:16px">
       <button onclick="switchTab('collection')" style="width:40px;height:40px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s" title="Zurück">←</button>
-      <div class="search-bar"><span class="s-icon">🔍</span><input type="text" id="searchInputTop" placeholder="Film, Serie, Schauspieler..." autocomplete="off"></div>
+      <div class="search-bar"><span class="s-icon">🔍</span><input type="text" id="searchInputTop" placeholder="Film, Serie, Musik, Game..." autocomplete="off"></div>
     </div>
     <div class="content" style="padding-top:12px"><div id="searchContent">
       <div class="empty-state"><div class="empty-icon">🔍</div><p>Suche nach Filmen, Serien<br>oder Schauspielern</p></div>
@@ -310,6 +310,9 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area
         </button>
         <button class="mode-btn" data-mode="music">
           <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> Musik</span>
+        </button>
+        <button class="mode-btn" data-mode="news">
+          <span style="display:inline-flex;align-items:center;gap:7px;letter-spacing:0.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> News</span>
         </button>
       </div>
       <!-- Row 4: Filter tabs -->
@@ -380,8 +383,9 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area
     <div id="lastExportInfo" style="font-size:13px;color:var(--gold-dim);margin-bottom:14px;font-weight:500"></div>
     <button class="settings-btn" onclick="startSwipeMode()" style="margin:0 0 8px">▶️ Checker <span id="swipeCount" style="font-size:12px;color:var(--gold)"></span></button>
     <button class="settings-btn" onclick="closeSettings();showReviewGrid()" style="margin:0 0 8px">🔍 Nochmal prüfen <span id="reviewCount" style="font-size:12px;color:var(--gold)"></span></button>
-    <button class="settings-btn" onclick="document.getElementById('listFile').click()" style="margin:0 0 12px">📄 Liste laden (Textdatei)</button>
+    <button class="settings-btn" onclick="document.getElementById('listFile').click()" style="margin:0 0 8px">📄 Liste laden (Textdatei)</button>
     <input type="file" id="listFile" accept=".txt,.csv,.text" style="display:none" onchange="importList(event)">
+    <button class="settings-btn" onclick="closeSettings();openManualAdd()" style="margin:0 0 12px">✏️ Selbst hinzufügen</button>
     <button class="settings-btn" onclick="cacheAllCovers()" style="margin:0 0 4px">💾 Daten lokal speichern</button>
     <div id="cacheProgress" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;display:none"></div>
     <!-- Category toggles -->
@@ -389,6 +393,24 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area
       <div style="font-size:15px;font-weight:600;color:var(--gold-dim);margin-bottom:10px">📂 Kategorien</div>
       <div id="categoryToggles"></div>
     </div>
+  </div>
+</div>
+
+<!-- Manual Add Overlay -->
+<div id="manualAddOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:var(--bg-deep);overflow-y:auto">
+  <div style="max-width:500px;margin:0 auto;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-family:var(--font-display);font-size:22px;color:var(--gold)">Selbst hinzufügen</div>
+      <button onclick="document.getElementById('manualAddOverlay').style.display='none'" style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <!-- Type tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:20px" id="manualTabs">
+      <button class="filter-tab active" onclick="switchManualTab('film',this)">🎬 Film</button>
+      <button class="filter-tab" onclick="switchManualTab('serie',this)">📺 Serie</button>
+      <button class="filter-tab" onclick="switchManualTab('game',this)">🎮 Game</button>
+      <button class="filter-tab" onclick="switchManualTab('musik',this)">🎵 Musik</button>
+    </div>
+    <div id="manualForm"></div>
   </div>
 </div>
 
@@ -500,13 +522,33 @@ async function performSearch(q){
       return `<div class="movie-card" onclick="openGameDetail(${g.id})"><div class="movie-poster">${g.background_image?`<img src="${g.background_image}" alt="${g.name}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${g.name}</div>`}${g.rating?`<div class="rating-badge">★ ${g.rating.toFixed(1)}</div>`:''}<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${g.name}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
     }).join('')}</div>`}
   
-  // Music search via Deezer (free, no key needed, much better search)
+  // Music search via Deezer (with CORS proxy fallback)
   let musicResults=[];
   try{
-    const dzRes=await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=8`);
+    let dzRes;
+    try{
+      dzRes=await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=8`);
+    }catch(e){
+      // CORS blocked - try proxy
+      dzRes=await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=8`)}`);
+    }
     const dzData=await dzRes.json();
     if(dzData.data)musicResults=dzData.data;
-  }catch(e){}
+  }catch(e){
+    // Fallback to MusicBrainz if Deezer fails completely
+    try{
+      const mbRes=await fetch(`https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=8`,{headers:{'User-Agent':'PingusList/1.0'}});
+      const mbData=await mbRes.json();
+      if(mbData['release-groups']){
+        musicResults=mbData['release-groups'].map(rg=>({
+          id:rg.id,title:rg.title,
+          artist:{name:(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ')},
+          cover_medium:`https://coverartarchive.org/release-group/${rg.id}/front-250`,
+          _isMB:true
+        }));
+      }
+    }catch(e2){}
+  }
   
   if(musicResults.length){
     const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
@@ -516,7 +558,7 @@ async function performSearch(q){
       const inCol=musicCol['dz_'+m.id];
       const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px"></span>':'';
       const isST=(m.title||'').toLowerCase().includes('soundtrack')||(m.title||'').toLowerCase().includes('ost ');
-      return `<div class="movie-card" onclick="openDeezerAlbum(${m.id})"><div class="movie-poster">${cover?`<img src="${cover}" alt="${m.title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;text-align:center">🎵</div>`}<div class="type-badge" style="background:rgba(156,39,176,0.85)">${isST?'OST':'ALBUM'}</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${m.title}${dot}</div><div class="movie-year">${artist}</div></div></div>`;
+      return `<div class="movie-card" onclick="${m._isMB?`openMusicDetailMB('${m.id}')`:`openDeezerAlbum(${m.id})`}"><div class="movie-poster">${cover?`<img src="${cover}" alt="${m.title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;text-align:center">🎵</div>`}<div class="type-badge" style="background:rgba(156,39,176,0.85)">${isST?'OST':'ALBUM'}</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${m.title}${dot}</div><div class="movie-year">${artist}</div></div></div>`;
     }).join('')}</div>`;
   }
   
@@ -531,7 +573,7 @@ async function openDeezerAlbum(albumId){
   
   let album;
   try{
-    const res=await fetch(`https://api.deezer.com/album/${albumId}`);
+    let res;try{res=await fetch(`https://api.deezer.com/album/${albumId}`)}catch(e){res=await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/album/${albumId}`)}`)}
     album=await res.json();
   }catch(e){}
   if(!album||album.error){modal.classList.remove('open');return}
@@ -584,15 +626,56 @@ function openMusicDetail(mid){
   const m=musicCol[mid];
   if(!m)return;
   if(m.dzId)openDeezerAlbum(m.dzId);
-  else if(m.mbid)openMusicDetailFromSearch(m.mbid);
   else openDeezerAlbum(mid.replace('dz_',''));
+}
+
+// MusicBrainz fallback detail
+async function openMusicDetailMB(mbid){
+  const modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
+  modal.classList.add('open');content.innerHTML='<div class="loading" style="min-height:100vh;align-items:center"><div class="spinner"></div></div>';
+  let rg;
+  try{
+    const res=await fetch(`https://musicbrainz.org/ws/2/release-group/${mbid}?inc=artists+releases&fmt=json`,{headers:{'User-Agent':'PingusList/1.0'}});
+    rg=await res.json();
+  }catch(e){}
+  if(!rg){modal.classList.remove('open');return}
+  const title=rg.title||'';
+  const artist=(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ');
+  const yr=(rg['first-release-date']||'').split('-')[0];
+  const cover=`https://coverartarchive.org/release-group/${mbid}/front-500`;
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  const isAdded=!!musicCol[mid];
+  const addArea=isAdded?
+    `<div style="font-size:13px;color:var(--accent-green);margin-bottom:12px">✓ In deiner Sammlung</div>`
+    :`<div class="action-row" style="margin-bottom:12px">
+      <button onclick="addMusicMB('${mbid}','album',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button>
+      <button onclick="addMusicMB('${mbid}','soundtrack',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button>
+    </div>`;
+  content.innerHTML=`<div class="modal-backdrop"><img src="${cover}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)">
+    <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="modal-movie-title">${title}</div>
+    <div class="modal-meta"><span>${artist}</span>${yr?`<span>${yr}</span>`:''}</div>
+    ${addArea}</div>`;
+}
+function addMusicMB(mbid,category,btn){
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  fetch(`https://musicbrainz.org/ws/2/release-group/${mbid}?inc=artists&fmt=json`,{headers:{'User-Agent':'PingusList/1.0'}})
+    .then(r=>r.json()).then(rg=>{
+      const artist=(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ');
+      musicCol[mid]={id:mid,mbid:mbid,title:rg.title,artist:artist,year:(rg['first-release-date']||'').split('-')[0],cover:`https://coverartarchive.org/release-group/${mbid}/front-250`,category:category,userRating:0,favorite:false,lastModified:Date.now()};
+      localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+      btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
+      showToast(`"${rg.title}" → ${category==='soundtrack'?'Soundtracks':'Alben'}`);
+    }).catch(()=>showToast('Fehler'));
 }
 
 function addDeezerMusic(albumId,category,btn){
   const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
   const mid='dz_'+albumId;
   
-  fetch(`https://api.deezer.com/album/${albumId}`)
+  fetch(`https://api.deezer.com/album/${albumId}`).catch(()=>fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/album/${albumId}`)}`))
     .then(r=>r.json()).then(album=>{
       musicCol[mid]={
         id:mid,dzId:albumId,title:album.title,artist:album.artist?.name||'',
@@ -1179,6 +1262,15 @@ function renderCollection(f='all'){
   const counterLbl=document.getElementById('counterLabel');
   function setCounter(num,label){counterNum.textContent=num;counterLbl.textContent=' '+label}
 
+  if(collectionMode==='news'){
+    gamesView.style.display='block';
+    setCounter('','News');
+    gamesView.innerHTML='<div style="text-align:center;padding:20px"><div class="spinner"></div><div style="color:var(--text-muted);margin-top:12px;font-size:13px">Lade News...</div></div>';
+    loadNewsFeed(f);
+    empty.style.display='none';
+    return;
+  }
+
   if(collectionMode==='games'){
     gamesView.style.display='block';
     const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
@@ -1309,7 +1401,7 @@ function renderCollection(f='all'){
       const ms=d.rating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${d.rating>=i?'filled':''}">★</span>`).join(''):'';
       const heart=d.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤️</span>':'';
       return `<div class="collection-item" onclick="openMovieDetail(${info.id})">
-        <div class="collection-poster">${info.poster_path?`<img src="${posterUrl(info.poster_path,'w342')}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:4px;text-align:center">${title}</div>`}</div>
+        <div class="collection-poster">${(info.poster_path||info.customCover)?`<img src="${info.customCover||posterUrl(info.poster_path,'w342')}" alt="${title}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:4px;text-align:center">${title}</div>`}</div>
         <div class="collection-info">
           <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
           <div class="collection-year">${yr}</div>
@@ -1455,6 +1547,7 @@ function updateFilters(mode){
   const fc=document.getElementById('collectionFilters');
   if(mode==='games')fc.innerHTML=gamesFiltersHtml;
   else if(mode==='music')fc.innerHTML=musicFiltersHtml;
+  else if(mode==='news')fc.innerHTML=`<button class="filter-tab active" data-filter="alle"><span style="display:inline-flex;align-items:center;gap:5px;letter-spacing:0.5px">Alle</span></button><button class="filter-tab" data-filter="filme"><span style="display:inline-flex;align-items:center;gap:5px;letter-spacing:0.5px">🎬 Filme</span></button><button class="filter-tab" data-filter="serien"><span style="display:inline-flex;align-items:center;gap:5px;letter-spacing:0.5px">📺 Serien</span></button><button class="filter-tab" data-filter="spiele"><span style="display:inline-flex;align-items:center;gap:5px;letter-spacing:0.5px">🎮 Spiele</span></button>`;
   else if(mode==='books')fc.innerHTML=booksFiltersHtml;
   else fc.innerHTML=defaultFiltersHtml;
 }
@@ -2408,6 +2501,197 @@ async function processVoice(text){
   if(aM){const q=aM[1].trim();voiceText.textContent=`Suche "${q}"...`;const r=await searchMovies(q);if(r?.results?.length){const mv=r.results[0],d=getMovieData(mv.id);d.seen=true;d.movieInfo={id:mv.id,title:mv.title,poster_path:mv.poster_path,release_date:mv.release_date,vote_average:mv.vote_average,type:'movie'};setMovieData(mv.id,d);voiceText.textContent=`✓ "${mv.title}"`;showToast(`"${mv.title}" hinzugefügt`)}else{voiceText.textContent='Nicht gefunden'}return}
   const sM=l.match(/(?:suche|such|finde|zeig)\s+(.+)/i);if(sM){handleSearch(sM[1]);voiceText.textContent=`Suche "${sM[1]}"...`;return}
   handleSearch(text);
+}
+
+// ===== NEWS FEED =====
+async function loadNewsFeed(filter='alle'){
+  const gv=document.getElementById('gamesView');
+  let html='';
+  
+  const section=(title,icon,items)=>{
+    if(!items.length)return'';
+    return `<div style="margin-bottom:28px">
+      <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px">${icon} ${title}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">${items}</div>
+    </div>`;
+  };
+  
+  const movieCard=(m,badge)=>{
+    const title=m.title||m.name||'';
+    const yr=(m.release_date||m.first_air_date||'').split('-')[0];
+    const dt=m.release_date||m.first_air_date||'';
+    const dateStr=dt?new Date(dt).toLocaleDateString('de-DE',{day:'numeric',month:'short',year:'numeric'}):'';
+    return `<div class="collection-item" onclick="${m.media_type==='tv'||m.first_air_date?`openSeriesDetail(${m.id})`:`openMovieDetail(${m.id})`}" style="cursor:pointer">
+      <div class="collection-poster">${m.poster_path?`<img src="${posterUrl(m.poster_path,'w342')}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;text-align:center;padding:4px">${title}</div>`}</div>
+      <div class="collection-info">
+        <div class="collection-title-wrap"><span class="collection-title" data-title="${title.replace(/"/g,'&quot;')}">${title}</span></div>
+        <div class="collection-year">${dateStr||yr}</div>
+        ${badge?`<div style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,175,87,0.15);color:var(--gold);display:inline-block;margin-top:2px">${badge}</div>`:''}
+      </div></div>`;
+  };
+  
+  try{
+    // Trending Movies
+    if(filter==='alle'||filter==='filme'){
+      const [trendRes,upRes]=await Promise.all([
+        fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE`),
+        fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE&region=DE`)
+      ]);
+      const trend=await trendRes.json();
+      const up=await upRes.json();
+      html+=section('Gerade im Trend','🔥',(trend.results||[]).slice(0,8).map(m=>movieCard(m,'Trending')));
+      html+=section('Demnächst im Kino','🎬',(up.results||[]).slice(0,8).map(m=>movieCard(m,'Kino')));
+    }
+    
+    // Trending Series
+    if(filter==='alle'||filter==='serien'){
+      const [trendTv,airRes]=await Promise.all([
+        fetch(`https://api.themoviedb.org/3/trending/tv/week?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE`),
+        fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE`)
+      ]);
+      const tvTrend=await trendTv.json();
+      const tvAir=await airRes.json();
+      html+=section('Serien im Trend','📺',(tvTrend.results||[]).slice(0,8).map(m=>movieCard({...m,media_type:'tv'},'Trending')));
+      html+=section('Gerade auf Sendung','📡',(tvAir.results||[]).slice(0,8).map(m=>movieCard({...m,media_type:'tv'},'Läuft jetzt')));
+    }
+    
+    // Upcoming Games
+    if(filter==='alle'||filter==='spiele'){
+      const today=new Date().toISOString().split('T')[0];
+      const future=new Date(Date.now()+90*86400000).toISOString().split('T')[0];
+      const gRes=await fetch(`https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&dates=${today},${future}&ordering=-added&page_size=8`);
+      const gData=await gRes.json();
+      if(gData.results?.length){
+        html+=section('Neue Spiele','🎮',(gData.results||[]).map(g=>{
+          const plats=(g.platforms||[]).map(p=>p.platform.name).slice(0,3).join(', ');
+          return `<div class="collection-item" onclick="openGameDetail(${g.id})" style="cursor:pointer">
+            <div class="collection-poster">${g.background_image?`<img src="${g.background_image}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;text-align:center;padding:4px">${g.name}</div>`}</div>
+            <div class="collection-info">
+              <div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div>
+              <div class="collection-year">${(g.released||'').split('-')[0]}</div>
+              ${plats?`<div style="font-size:9px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${plats}</div>`:''}
+            </div></div>`;
+        }).join(''));
+      }
+    }
+  }catch(e){html+=`<div style="color:var(--text-muted);font-size:13px;padding:20px;text-align:center">Fehler beim Laden. Bitte Internet prüfen.</div>`}
+  
+  if(!html)html='<div class="empty-state"><div class="empty-icon">📰</div><p>Keine News verfügbar</p></div>';
+  gv.innerHTML=html;
+  setupScrollingTitles();
+}
+
+// ===== MANUAL ADD =====
+function openManualAdd(){
+  document.getElementById('manualAddOverlay').style.display='block';
+  switchManualTab('film',document.querySelector('#manualTabs .filter-tab'));
+}
+function switchManualTab(type,btn){
+  document.querySelectorAll('#manualTabs .filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const form=document.getElementById('manualForm');
+  const field=(id,label,type='text',ph='')=>`<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--gold-dim);display:block;margin-bottom:4px">${label}</label><input id="ma_${id}" type="${type}" placeholder="${ph}" style="width:100%;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-body);font-size:14px;outline:none"></div>`;
+  const area=(id,label,ph='')=>`<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--gold-dim);display:block;margin-bottom:4px">${label}</label><textarea id="ma_${id}" placeholder="${ph}" rows="3" style="width:100%;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-body);font-size:14px;outline:none;resize:vertical"></textarea></div>`;
+  const fileField=`<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--gold-dim);display:block;margin-bottom:4px">Cover-Bild</label><div style="display:flex;gap:8px;align-items:center"><div id="ma_preview" style="width:80px;height:120px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0"><span style="color:var(--text-muted);font-size:24px">📷</span></div><div><input type="file" id="ma_cover" accept="image/*" onchange="previewManualCover(this)" style="font-size:12px;color:var(--text-secondary)"><div style="font-size:10px;color:var(--text-muted);margin-top:4px">Oder URL:</div><input id="ma_coverurl" type="text" placeholder="https://..." style="width:100%;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;outline:none;margin-top:2px"></div></div></div>`;
+  const saveBtn=`<button onclick="saveManualEntry('${type}')" style="width:100%;padding:14px;border-radius:var(--radius);border:none;background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:var(--bg-deep);font-family:var(--font-display);font-size:16px;font-weight:700;cursor:pointer;margin-top:8px">Speichern</button>`;
+  
+  if(type==='film'){
+    form.innerHTML=field('title','Titel','text','z.B. Der Boomerang-Fuchs')+fileField+field('year','Jahr','text','2024')+field('genres','Genres','text','Action, Komödie')+field('runtime','Laufzeit (Min.)','number','120')+area('desc','Beschreibung','Worum geht es?')+field('director','Regie','text','Max Mustermann')+field('cast','Besetzung','text','Schauspieler 1, Schauspieler 2')+field('composer','Soundtrack','text','Hans Zimmer')+saveBtn;
+  }else if(type==='serie'){
+    form.innerHTML=field('title','Titel','text','z.B. Meine Serie')+fileField+field('year','Startjahr','text','2020')+field('genres','Genres','text','Drama, Thriller')+field('seasons','Anzahl Staffeln','number','3')+area('desc','Beschreibung','Worum geht es?')+field('cast','Besetzung','text','Schauspieler 1, Schauspieler 2')+`<div id="ma_seasonFields"></div><button onclick="generateSeasonFields()" style="padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:12px;cursor:pointer;margin-bottom:12px">Staffel-Folgen eingeben</button>`+saveBtn;
+  }else if(type==='game'){
+    form.innerHTML=field('title','Titel','text','z.B. Boomerang-Fuchs')+fileField+field('year','Jahr','text','2024')+field('genres','Genres','text','Jump & Run, Abenteuer')+field('platform','Plattform','text','Nintendo Switch')+field('developer','Entwickler','text','Studio XY')+area('desc','Beschreibung','Worum geht es?')+saveBtn;
+  }else if(type==='musik'){
+    form.innerHTML=field('title','Album-Titel','text','z.B. Mein Album')+fileField+field('artist','Künstler','text','Jupiter Jones')+field('year','Jahr','text','2024')+field('category','Kategorie','text','Album oder Soundtrack')+area('tracks','Titelliste','Ein Titel pro Zeile:\n1. Erster Song\n2. Zweiter Song')+saveBtn;
+  }
+}
+
+function generateSeasonFields(){
+  const n=parseInt(document.getElementById('ma_seasons')?.value)||1;
+  const c=document.getElementById('ma_seasonFields');
+  let h='';
+  for(let i=1;i<=n;i++){
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;color:var(--text-secondary);width:70px">Staffel ${i}:</span><input id="ma_s${i}eps" type="number" placeholder="Folgen" style="width:80px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;outline:none"> Folgen</div>`;
+  }
+  c.innerHTML=h;
+}
+
+function previewManualCover(input){
+  if(input.files&&input.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>{document.getElementById('ma_preview').innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`};
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function saveManualEntry(type){
+  const v=id=>document.getElementById('ma_'+id)?.value?.trim()||'';
+  const title=v('title');
+  if(!title){showToast('Titel fehlt!');return}
+  
+  // Cover: file or URL
+  let coverData='';
+  const fileInput=document.getElementById('ma_cover');
+  const coverUrl=v('coverurl');
+  
+  const doSave=(cover)=>{
+    const id='custom_'+Date.now();
+    
+    if(type==='film'){
+      const d=getMovieData(id);
+      d.movieInfo={id:id,title:title,poster_path:null,release_date:v('year')+'-01-01',vote_average:0,type:'movie',customCover:cover};
+      d.seen=true;d.genres=v('genres').split(',').map(g=>g.trim()).filter(g=>g);
+      d.customData={description:v('desc'),director:v('director'),cast:v('cast'),composer:v('composer'),runtime:v('runtime')};
+      setMovieData(id,d);
+      showToast(`"${title}" hinzugefügt!`);
+    }else if(type==='serie'){
+      const sd=getSeriesData(id);
+      const numS=parseInt(v('seasons'))||1;
+      sd.seriesInfo={id:id,name:title,poster_path:null,first_air_date:v('year')+'-01-01',vote_average:0,type:'series',seasons:numS,customCover:cover};
+      sd.genres=v('genres').split(',').map(g=>g.trim()).filter(g=>g);
+      sd.customData={description:v('desc'),cast:v('cast')};
+      sd.episodes={};
+      // Save episode counts
+      const epCounts={};
+      for(let i=1;i<=numS;i++){
+        const eps=parseInt(document.getElementById('ma_s'+i+'eps')?.value)||10;
+        epCounts[i]=eps;
+      }
+      sd.seriesInfo.seasonEpCounts=epCounts;
+      setSeriesData(id,sd);
+      showToast(`"${title}" hinzugefügt!`);
+    }else if(type==='game'){
+      const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+      gamesCol[id]={
+        id:id,name:title,poster:cover,released:v('year')+'-01-01',
+        rating:0,platform:v('platform')||'PC',subPlatform:null,savedPlatforms:[v('platform')||'PC'],
+        genres:v('genres').split(',').map(g=>g.trim()).filter(g=>g),
+        customData:{description:v('desc'),developer:v('developer')},
+        originalName:title,lastModified:Date.now()
+      };
+      localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+      showToast(`"${title}" hinzugefügt!`);
+    }else if(type==='musik'){
+      const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+      musicCol[id]={
+        id:id,title:title,artist:v('artist'),year:v('year'),cover:cover,
+        category:v('category').toLowerCase().includes('soundtrack')?'soundtrack':'album',
+        tracks:v('tracks'),userRating:0,favorite:false,lastModified:Date.now()
+      };
+      localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+      showToast(`"${title}" hinzugefügt!`);
+    }
+    document.getElementById('manualAddOverlay').style.display='none';
+    renderCollection('seen');
+  };
+  
+  if(fileInput?.files?.length){
+    const reader=new FileReader();
+    reader.onload=e=>doSave(e.target.result);
+    reader.readAsDataURL(fileInput.files[0]);
+  }else{
+    doSave(coverUrl||'');
+  }
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
