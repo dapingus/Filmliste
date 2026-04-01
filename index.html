@@ -758,7 +758,6 @@ async function openMusicDetailLFM(artist,album){
 
 function addMusicLFM(artist,title,cover,category,btn){
   var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
-  // Check if already exists under any key
   var existingKey='';
   var titleLow=title.toLowerCase();
   var artLow=artist.toLowerCase();
@@ -766,22 +765,62 @@ function addMusicLFM(artist,title,cover,category,btn){
     var e=musicCol[k];
     if((e.title||'').toLowerCase()===titleLow&&(e.artist||'').toLowerCase()===artLow) existingKey=k;
   });
+  var mid=existingKey||'lfm_'+artist+'_'+title;
   if(existingKey){
-    // Update existing entry
     musicCol[existingKey].cover=cover||musicCol[existingKey].cover;
     musicCol[existingKey].category=category;
     musicCol[existingKey].lastModified=Date.now();
-    localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
-    btn.classList.add('active');btn.textContent='✓ Aktualisiert';
-    showToast('"'+title+'" aktualisiert');
   }else{
-    var mid='lfm_'+artist+'_'+title;
     musicCol[mid]={id:mid,title:title,artist:artist,year:'',cover:cover,category:category,userRating:0,favorite:false,lastModified:Date.now()};
-    localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
-    btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
-    showToast('"'+title+'" → '+(category==='soundtrack'?'Soundtracks':'Alben'));
   }
-  setTimeout(function(){openMusicDetailLFM(artist,title)},500);
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
+  showToast('"'+title+'" → '+(category==='soundtrack'?'Soundtracks':'Alben'));
+  
+  // Show rating popup
+  showMusicRatingPopup(mid,title,artist);
+}
+
+function showMusicRatingPopup(mid,title,artist){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  overlay.onclick=function(e){if(e.target===overlay){overlay.remove();openMusicDetailLFM(artist,title)}};
+  
+  var h='<div style="background:var(--bg-primary);border:1.5px solid var(--border);border-radius:16px;padding:24px;max-width:340px;width:90%;text-align:center">';
+  h+='<div style="font-family:var(--font-display);font-size:18px;color:var(--text-primary);margin-bottom:4px">'+title+'</div>';
+  h+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+artist+'</div>';
+  h+='<div style="margin-bottom:16px">';
+  for(var i=1;i<=10;i++){
+    h+='<span onclick="musicRateFromPopup(\''+mid.replace(/'/g,"\\'")+'\','+i+',\''+artist.replace(/'/g,"\\'")+'\',\''+title.replace(/'/g,"\\'")+'\',this)" style="font-size:28px;cursor:pointer;color:var(--text-muted)">☆</span>';
+  }
+  h+='</div>';
+  h+='<div style="display:flex;gap:10px;justify-content:center">';
+  h+='<button onclick="musicHeartFromPopup(\''+mid.replace(/'/g,"\\'")+'\',\''+artist.replace(/'/g,"\\'")+'\',\''+title.replace(/'/g,"\\'")+'\',this)" style="padding:10px 20px;border-radius:20px;border:1.5px solid #e04060;background:transparent;color:#e04060;font-family:var(--font-body);font-size:14px;cursor:pointer">❤ 10/10</button>';
+  h+='<button onclick="this.closest(\'[style*=backdrop-filter]\').remove();openMusicDetailLFM(\''+artist.replace(/'/g,"\\'")+'\',\''+title.replace(/'/g,"\\'")+'\');" style="padding:10px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-family:var(--font-body);font-size:13px;cursor:pointer">Ohne Bewertung</button>';
+  h+='</div></div>';
+  
+  overlay.innerHTML=h;
+  document.body.appendChild(overlay);
+}
+
+function musicRateFromPopup(mid,r,artist,title,el){
+  var stars=el.parentElement.querySelectorAll('span');
+  stars.forEach(function(s,i){s.textContent=i<r?'★':'☆';s.style.color=i<r?'var(--gold)':'var(--text-muted)'});
+  setTimeout(function(){
+    var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+    if(musicCol[mid]){musicCol[mid].userRating=r;musicCol[mid].lastModified=Date.now();localStorage.setItem('filmothek_music',JSON.stringify(musicCol))}
+    var pop=el.closest('[style*="backdrop-filter"]');if(pop)pop.remove();
+    showToast(r+'/10');
+    openMusicDetailLFM(artist,title);
+  },300);
+}
+
+function musicHeartFromPopup(mid,artist,title,btn){
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  if(musicCol[mid]){musicCol[mid].userRating=10;musicCol[mid].favorite=true;musicCol[mid].lastModified=Date.now();localStorage.setItem('filmothek_music',JSON.stringify(musicCol))}
+  var pop=btn.closest('[style*="backdrop-filter"]');if(pop)pop.remove();
+  showToast('❤️ 10/10');
+  openMusicDetailLFM(artist,title);
 }
 
 function rateMusicLFM(mid,r,el){
@@ -1590,14 +1629,15 @@ function renderCollection(f='all'){
     if(!filtered.length){
       gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Keine ${label}.<br>Suche nach Künstlern oder Alben.</p></div>`;
     }else{
-      window._mList=filtered;
+      window._mArr=[];
       var musicHtml='<div class="collection-grid">';
       for(var mi=0;mi<filtered.length;mi++){
         var m=filtered[mi];
+        window._mArr.push({a:m.artist||'',t:m.title||''});
         var ms='';
         if(m.userRating){for(var si=1;si<=10;si++)ms+='<span class="mini-star '+(m.userRating>=si?'filled':'')+'">★</span>'}
         var ht=m.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
-        musicHtml+='<div class="collection-item" onclick="window._mClick('+mi+')" style="cursor:pointer">';
+        musicHtml+='<div class="collection-item" onclick="var x=window._mArr['+mi+'];if(x)openMusicDetailLFM(x.a,x.t)" style="cursor:pointer">';
         musicHtml+='<div class="collection-poster" style="aspect-ratio:1/1">';
         if(m.cover)musicHtml+='<img src="'+m.cover+'" loading="lazy">';
         else musicHtml+='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">'+(m.title||'')+'</div>';
