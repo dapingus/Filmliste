@@ -351,13 +351,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
           <button onclick="setSort('year-asc')" style="width:100%;padding:10px 14px;border:none;background:none;color:var(--text-primary);font-family:var(--font-body);font-size:13px;cursor:pointer;text-align:left">📅 Älteste</button>
         </div>
       </div>
-      <div class="collection-grid" id="collectionGrid"></div>
-      <div id="seriesListView" style="display:none"></div>
-      <div id="gamesView" style="display:none"></div>
-      <div class="empty-state" id="collectionEmpty" style="display:none">
-        <div class="empty-icon">📀</div><p>Noch nichts hier.</p>
-      </div>
     </div>
+    <div class="collection-grid" id="collectionGrid"></div>
+    <div id="seriesListView" style="display:none"></div>
+    <div id="gamesView" style="display:none"></div>
+    <div class="empty-state" id="collectionEmpty" style="display:none">
+      <div class="empty-icon">📀</div><p>Noch nichts hier.</p>
+    </div>
+  </div>
   </div>
 
   <!-- PERSON -->
@@ -620,9 +621,17 @@ async function openDeezerAlbum(albumId){
 function openMusicDetail(mid){
   const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
   const m=musicCol[mid];
-  if(!m)return;
-  if(m.dzId)openDeezerAlbum(m.dzId);
-  else openDeezerAlbum(mid.replace('dz_',''));
+  if(!m){console.log('Music not found:',mid);return}
+  if(m.dzId) openDeezerAlbum(m.dzId);
+  else if(m.mbid) openMusicDetailMB(m.mbid);
+  else if(mid.startsWith('dz_')) openDeezerAlbum(mid.replace('dz_',''));
+  else if(mid.startsWith('mb_')) openMusicDetailMB(mid.replace('mb_',''));
+  else{
+    // Custom entry - show simple detail
+    const modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
+    modal.classList.add('open');
+    content.innerHTML='<div class="modal-backdrop">'+(m.cover?'<img src="'+m.cover+'" style="width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)">':'')+'<button class="modal-close" onclick="closeModal()">✕</button></div><div class="modal-body"><div class="modal-movie-title">'+(m.title||'')+'</div><div class="modal-meta"><span>'+(m.artist||'')+'</span>'+(m.year?'<span>'+m.year+'</span>':'')+'</div>'+(m.tracks?'<div style="margin-top:16px;font-size:13px;color:var(--text-secondary);white-space:pre-line">'+m.tracks+'</div>':'')+'</div>';
+  }
 }
 
 // MusicBrainz fallback detail
@@ -1375,7 +1384,7 @@ function renderCollection(f='all'){
       gamesView.innerHTML=`<div class="collection-grid">${filtered.map(m=>{
         const ms=m.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${m.userRating>=i?'filled':''}">★</span>`).join(''):'';
         const ht=m.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
-        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
+        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster" style="aspect-ratio:1/1">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
       }).join('')}</div>`;
       setupScrollingTitles();
     }
