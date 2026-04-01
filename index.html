@@ -497,8 +497,152 @@ async function performSearch(q){
       const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px;flex-shrink:0"></span>':'';
       return `<div class="movie-card" onclick="openGameDetail(${g.id})"><div class="movie-poster">${g.background_image?`<img src="${g.background_image}" alt="${g.name}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${g.name}</div>`}${g.rating?`<div class="rating-badge">★ ${g.rating.toFixed(1)}</div>`:''}<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${g.name}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
     }).join('')}</div>`}
-  if(!movies.length&&!tvs.length&&!people.length&&!games.length)h=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;
+  
+  // Music search via MusicBrainz
+  let musicResults=[];
+  try{
+    const mbRes=await fetch(`https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album|soundtrack&fmt=json&limit=8`,{headers:{'User-Agent':'PingusList/1.0'}});
+    const mbData=await mbRes.json();
+    if(mbData['release-groups'])musicResults=mbData['release-groups'];
+  }catch(e){}
+  
+  if(musicResults.length){
+    const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+    h+=`<div class="section-header"><div class="section-title">Musik</div></div><div class="search-results">${musicResults.map(m=>{
+      const artist=(m['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ');
+      const yr=(m['first-release-date']||'').split('-')[0];
+      const mbid=m.id;
+      const coverUrl=`https://coverartarchive.org/release-group/${mbid}/front-250`;
+      const inCol=musicCol['mb_'+mbid];
+      const dot=inCol?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent-green);margin-left:5px"></span>':'';
+      const isST=(m['primary-type']==='Album'&&(m['secondary-types']||[]).includes('Soundtrack'))||m.title?.toLowerCase().includes('soundtrack');
+      return `<div class="movie-card" onclick="openMusicDetailFromSearch('${mbid}')"><div class="movie-poster"><img src="${coverUrl}" alt="${m.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:8px;text-align:center>🎵 ${(m.title||'').replace(/'/g,'')}</div>'"><div class="type-badge" style="background:rgba(156,39,176,0.85)">${isST?'OST':'ALBUM'}</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${m.title}${dot}</div><div class="movie-year">${artist}${yr?' · '+yr:''}</div></div></div>`;
+    }).join('')}</div>`;
+  }
+  
+  if(!movies.length&&!tvs.length&&!people.length&&!games.length&&!musicResults.length)h=`<div class="empty-state"><div class="empty-icon">😕</div><p>Keine Ergebnisse</p></div>`;
   document.getElementById('searchContent').innerHTML=h;
+}
+
+// Music Detail from search
+async function openMusicDetailFromSearch(mbid){
+  const modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
+  modal.classList.add('open');content.innerHTML='<div class="loading" style="min-height:100vh;align-items:center"><div class="spinner"></div></div>';
+  
+  let rg,tracks=[];
+  try{
+    const res=await fetch(`https://musicbrainz.org/ws/2/release-group/${mbid}?inc=artists+releases&fmt=json`,{headers:{'User-Agent':'PingusList/1.0'}});
+    rg=await res.json();
+    // Get tracklist from first release
+    if(rg.releases?.length){
+      const relId=rg.releases[0].id;
+      const tRes=await fetch(`https://musicbrainz.org/ws/2/release/${relId}?inc=recordings&fmt=json`,{headers:{'User-Agent':'PingusList/1.0'}});
+      const tData=await tRes.json();
+      if(tData.media?.length)tracks=tData.media[0].tracks||[];
+    }
+  }catch(e){}
+  if(!rg){modal.classList.remove('open');return}
+  
+  const title=rg.title||'';
+  const artist=(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ');
+  const yr=(rg['first-release-date']||'').split('-')[0];
+  const coverUrl=`https://coverartarchive.org/release-group/${mbid}/front-500`;
+  const isST=(rg['primary-type']==='Album'&&(rg['secondary-types']||[]).includes('Soundtrack'))||title.toLowerCase().includes('soundtrack');
+  
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  const isAdded=!!musicCol[mid];
+  const mData=musicCol[mid]||{};
+  
+  // Star rating
+  const mRating=mData.userRating||0;
+  const mFav=mData.favorite||false;
+  const mStars=isAdded?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="star ${mRating>=i?'filled':''}" onclick="rateMusic('${mbid}',${i},this)">${mRating>=i?'★':'☆'}</span>`).join(''):'';
+  const mRl=mRating?`<span class="star-rating-label">${mRating}/10</span>`:'';
+  const mHeart=isAdded?`<span onclick="toggleMusicFavorite('${mbid}',this);event.stopPropagation()" style="cursor:pointer;font-size:24px;margin-left:10px;color:${mFav?'#e04060':'#555'}">❤</span>`:'';
+  
+  // Tracklist
+  const trackHtml=tracks.length?`<div style="margin-top:16px"><div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">${tracks.length} Titel</div>${tracks.map((t,i)=>`<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text-muted);width:24px;text-align:right;flex-shrink:0">${i+1}</span><span style="color:var(--text-primary);flex:1">${t.title||t.recording?.title||''}</span><span style="color:var(--text-muted);font-size:11px">${t.length?Math.floor(t.length/60000)+':'+String(Math.floor((t.length%60000)/1000)).padStart(2,'0'):''}</span></div>`).join('')}</div>`:'';
+  
+  // Add buttons
+  const addArea=isAdded?
+    `<div style="font-size:13px;color:var(--accent-green);margin-bottom:12px">✓ In deiner Sammlung (${mData.category==='soundtrack'?'Soundtrack':'Album'})</div>`
+    :`<div class="action-row" style="margin-bottom:12px">
+      <button onclick="addMusic('${mbid}','album',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button>
+      <button onclick="addMusic('${mbid}','soundtrack',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button>
+    </div>`;
+  
+  content.innerHTML=`<div class="modal-backdrop"><img src="${coverUrl}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)">
+    <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="modal-movie-title">${title}</div>
+    <div class="modal-meta"><span>${artist}</span>${yr?`<span>${yr}</span>`:''}${isST?'<span class="tag">Soundtrack</span>':''}</div>
+    ${isAdded?`<div class="star-rating">${mStars}${mRl}${mHeart}</div>`:''}
+    ${addArea}
+    ${trackHtml}
+    </div>`;
+}
+
+function openMusicDetail(mid){
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const m=musicCol[mid];
+  if(!m)return;
+  openMusicDetailFromSearch(m.mbid||mid.replace('mb_',''));
+}
+
+function addMusic(mbid,category,btn){
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  
+  fetch(`https://musicbrainz.org/ws/2/release-group/${mbid}?inc=artists&fmt=json`,{headers:{'User-Agent':'PingusList/1.0'}})
+    .then(r=>r.json()).then(rg=>{
+      const artist=(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ');
+      musicCol[mid]={
+        id:mid,mbid:mbid,title:rg.title,artist:artist,
+        year:(rg['first-release-date']||'').split('-')[0],
+        cover:`https://coverartarchive.org/release-group/${mbid}/front-250`,
+        category:category,userRating:0,favorite:false,lastModified:Date.now()
+      };
+      localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+      btn.classList.add('active');btn.textContent='✓ Hinzugefügt';
+      showToast(`"${rg.title}" → ${category==='soundtrack'?'Soundtracks':'Alben'}`);
+      setTimeout(()=>openMusicDetailFromSearch(mbid),500);
+    }).catch(()=>showToast('Fehler'));
+}
+
+function rateMusic(mbid,r,el){
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  if(!musicCol[mid])return;
+  musicCol[mid].userRating=musicCol[mid].userRating===r?0:r;
+  if(musicCol[mid].userRating<10)musicCol[mid].favorite=false;
+  musicCol[mid].lastModified=Date.now();
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  const rating=musicCol[mid].userRating;
+  const c=el.parentElement;
+  c.querySelectorAll('.star').forEach((s,i)=>{s.classList.toggle('filled',i<rating);s.textContent=i<rating?'★':'☆'});
+  let l=c.querySelector('.star-rating-label');
+  if(rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=`${rating}/10`}else if(l)l.remove();
+  const heart=c.querySelector('span[onclick*="toggleMusicFavorite"]');
+  if(heart)heart.style.color=musicCol[mid].favorite?'#e04060':'#555';
+  if(rating)showToast(`${rating}/10`);
+}
+
+function toggleMusicFavorite(mbid,el){
+  const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const mid='mb_'+mbid;
+  if(!musicCol[mid])return;
+  musicCol[mid].favorite=!musicCol[mid].favorite;
+  if(musicCol[mid].favorite)musicCol[mid].userRating=10;
+  musicCol[mid].lastModified=Date.now();
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  el.style.color=musicCol[mid].favorite?'#e04060':'#555';
+  if(musicCol[mid].favorite){
+    showToast('❤️ Favorit! · 10/10');
+    el.parentElement.querySelectorAll('.star').forEach(s=>{s.classList.add('filled');s.textContent='★'});
+    let l=el.parentElement.querySelector('.star-rating-label');
+    if(!l){l=document.createElement('span');l.className='star-rating-label';el.parentElement.insertBefore(l,el)}
+    l.textContent='10/10';
+  }else{showToast('Favorit entfernt')}
 }
 
 // Game Detail
@@ -1129,9 +1273,24 @@ function renderCollection(f='all'){
   }
   if(collectionMode==='music'){
     gamesView.style.display='block';
-    const cat=f==='soundtracks'?'Soundtracks':'Alben';
-    gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>${cat}<br>Lade eine Liste, um Musik hinzuzufügen.</p></div>`;
-    empty.style.display='none';setCounter('0','Musik');
+    const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+    const allMusic=Object.values(musicCol);
+    const isAlbums=f==='soundtracks'?false:true;
+    const filtered=f==='soundtracks'?allMusic.filter(m=>m.category==='soundtrack'):allMusic.filter(m=>m.category!=='soundtrack');
+    const label=f==='soundtracks'?'Soundtracks':'Alben';
+    setCounter(filtered.length,label);
+    
+    if(!filtered.length){
+      gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Keine ${label}.<br>Suche nach Künstlern oder Alben.</p></div>`;
+    }else{
+      gamesView.innerHTML=`<div class="collection-grid">${filtered.map(m=>{
+        const ms=m.userRating?[1,2,3,4,5,6,7,8,9,10].map(i=>`<span class="mini-star ${m.userRating>=i?'filled':''}">★</span>`).join(''):'';
+        const ht=m.favorite?'<span style="color:#e04060;font-size:11px;margin-left:3px">❤</span>':'';
+        return `<div class="collection-item" onclick="openMusicDetail('${m.id}')"><div class="collection-poster">${m.cover?`<img src="${m.cover}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${m.title}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(m.title||'').replace(/"/g,'&quot;')}">${m.title}</span></div><div class="collection-year">${m.artist||''}${m.year?' · '+m.year:''}</div>${ms?`<div class="collection-stars">${ms}${ht}</div>`:(ht?`<div class="collection-stars">${ht}</div>`:'')}</div></div>`;
+      }).join('')}</div>`;
+      setupScrollingTitles();
+    }
+    empty.style.display='none';
     return;
   }
 
@@ -1574,7 +1733,8 @@ function exportData(){
   const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
   const games=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
   const consoles=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
-  const data={movies:collection,series:seriesCollection,review:review,categories:cats,games:games,consoles:consoles,exportDate:new Date().toLocaleString('de-DE'),version:4};
+  const music=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  const data={movies:collection,series:seriesCollection,review:review,categories:cats,games:games,consoles:consoles,music:music,exportDate:new Date().toLocaleString('de-DE'),version:5};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`filmothek_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();
@@ -1651,6 +1811,20 @@ function importData(e){
           if(!gamesCol[id]){gamesCol[id]=imported;addedG++}
         });
         localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+      }
+      
+      // Smart merge music
+      if(data.music){
+        const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+        Object.entries(data.music).forEach(([id,imported])=>{
+          if(!musicCol[id]){musicCol[id]=imported}
+          else{
+            const local=musicCol[id];
+            const lt=local.lastModified||0,it=imported.lastModified||0;
+            if(it>lt){local.userRating=imported.userRating||0;local.favorite=!!imported.favorite;local.lastModified=it}
+          }
+        });
+        localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
       }
       
       // Merge review list (add missing, no duplicates)
@@ -2167,15 +2341,17 @@ currentTab='collection';collectionMode='movies';
 applyCategoryVisibility();
 renderCollection('seen');
 
-// Auto-fullscreen for PWA: keep triggering fullscreen on touch
+// Auto-fullscreen for PWA: trigger once on first touch, re-trigger if lost
 if(window.matchMedia('(display-mode: fullscreen)').matches||window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone){
+  let fsActive=false;
   document.addEventListener('touchstart',function(){
-    if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    if(!fsActive&&!document.fullscreenElement&&!document.webkitFullscreenElement){
       const el=document.documentElement;
-      if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
-      else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+      if(el.requestFullscreen)el.requestFullscreen().then(()=>{fsActive=true}).catch(()=>{});
+      else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen();fsActive=true}
     }
   },{passive:true});
+  document.addEventListener('fullscreenchange',()=>{fsActive=!!document.fullscreenElement});
 }
 </script>
 </body>
