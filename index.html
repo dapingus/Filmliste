@@ -998,11 +998,11 @@ function renderCollection(f='all'){
     if(f==='pc'){
       // Show PC sub-categories (Digital / Steam) as tiles, like consoles
       const consoleCats=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
-      const pcGames=allGames.filter(g=>g.platform==='PC');
+      const pcGames=allGames.filter(g=>g.platform==='PC'||(g.savedPlatforms||[]).some(p=>p.startsWith('PC')));
       const selectedSub=document.getElementById('gamesView')?.dataset?.pcsub;
       
       if(selectedSub){
-        const subGames=pcGames.filter(g=>g.subPlatform===selectedSub);
+        const subGames=pcGames.filter(g=>g.subPlatform===selectedSub||(g.savedPlatforms||[]).includes('PC ('+selectedSub+')'));
         setCounter(subGames.length,selectedSub);
         if(!subGames.length){
           gamesView.innerHTML=`<div class="empty-state"><div class="empty-icon">💻</div><p>Keine ${selectedSub}-Spiele.</p></div>`;
@@ -1019,7 +1019,7 @@ function renderCollection(f='all'){
         ].filter(s=>consoleCats[s.id]===true);
         
         // Also show uncategorized PC games
-        const uncatGames=pcGames.filter(g=>!g.subPlatform);
+        const uncatGames=pcGames.filter(g=>!g.subPlatform&&!(g.savedPlatforms||[]).some(p=>p.startsWith('PC (')));
         
         gamesView.innerHTML=`<div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px">${pcSubs.map(s=>{
           const count=pcGames.filter(g=>g.subPlatform===s.sub).length;
@@ -1028,7 +1028,7 @@ function renderCollection(f='all'){
             <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3">${s.name}</div>
             ${count?`<div style="font-size:10px;color:var(--gold-dim);margin-top:4px">${count} Spiele</div>`:''}
           </div>`;
-        }).join('')}</div>${uncatGames.length?`<div style="margin-bottom:8px;font-size:12px;color:var(--text-muted)">Nicht zugeordnet (${uncatGames.length})</div><div class="collection-grid">${uncatGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`:''}`;
+        }).join('')}</div>${uncatGames.length?`<div style="margin-bottom:10px;font-size:14px;color:var(--gold-dim);font-weight:600;font-family:var(--font-display)">Nicht zugeordnet (${uncatGames.length})</div><div class="collection-grid">${uncatGames.map(g=>`<div class="collection-item" onclick="openCollectionGame('rawg_${g.id}')"><div class="collection-poster">${g.poster?`<img src="${g.poster}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:4px;text-align:center">${g.name}</div>`}</div><div class="collection-info"><div class="collection-title-wrap"><span class="collection-title" data-title="${(g.name||'').replace(/"/g,'&quot;')}">${g.name}</span></div><div class="collection-year">${(g.released||'').split('-')[0]}</div></div></div>`).join('')}</div>`:''}`;
         if(uncatGames.length)setupScrollingTitles();
       }
     }else{
@@ -1336,51 +1336,54 @@ function openSettings(){
 }
 
 function openGameSettings(){
+  document.getElementById('gameSettingsOverlay')?.remove();
   const cons=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
   const overlay=document.createElement('div');
   overlay.id='gameSettingsOverlay';
   overlay.style.cssText='position:fixed;inset:0;z-index:250;background:var(--bg-deep);overflow-y:auto;padding:0';
   
-  function tile(id,name){
-    const isOn=cons[id]===true;
-    return `<div onclick="toggleGameSetting('${id}',this)" style="background:var(--bg-card);border:1.5px solid ${isOn?'var(--accent-green)':'var(--border)'};border-radius:var(--radius);padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative">
-      <div style="position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;border:2px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
-      <img src="icon-${id}.png" style="width:64px;height:64px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:36px;margin-bottom:8px">🎮</div>
-      <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.2">${name}</div>
-    </div>`;
-  }
+  const allPlats=[
+    ['digital','Digital / PC'],['steam','Steam / PC'],
+    ['ps1','PS1'],['ps2','PS2'],['ps3','PS3'],['ps4','PS4'],['ps5','PS5'],['psp','PSP'],['vita','PS Vita'],
+    ['xbox360','Xbox 360'],['xboxone','Xbox One'],['xboxsx','Series X'],
+    ['snes','SNES'],['n64','N64'],['gamecube','GameCube'],['wii','Wii'],['wiiu','Wii U'],['switch','Switch'],
+    ['gameboy','Game Boy'],['gba','GBA'],['ds','DS'],['3ds','3DS'],
+    ['megadrive','Mega Drive'],['saturn','Saturn'],['dreamcast','Dreamcast'],['atari','Atari']
+  ];
   
-  overlay.innerHTML=`<div style="padding:20px;max-width:500px;margin:0 auto">
+  const tiles=allPlats.map(([id,name])=>{
+    const isOn=cons[id]===true;
+    return `<div data-platid="${id}" onclick="toggleGameSetting('${id}')" style="background:var(--bg-card);border:2px solid ${isOn?'var(--accent-green)':'var(--border)'};border-radius:var(--radius);padding:18px 10px 16px;text-align:center;cursor:pointer;position:relative">
+      <div data-dot style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;border:2.5px solid ${isOn?'var(--accent-green)':'var(--text-muted)'};background:${isOn?'var(--accent-green)':'transparent'}"></div>
+      <img src="icon-${id}.png" style="width:72px;height:72px;object-fit:contain;margin-bottom:10px" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;font-size:40px;margin-bottom:10px">🎮</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.2">${name}</div>
+    </div>`;
+  }).join('');
+  
+  overlay.innerHTML=`<div style="padding:20px;max-width:540px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:20px">
-      <button onclick="document.getElementById('gameSettingsOverlay').remove();openSettings()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:20px;cursor:pointer">✕</button>
+      <button onclick="document.getElementById('gameSettingsOverlay').remove();openSettings()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:22px;cursor:pointer">✕</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;margin-bottom:40px">
-      ${tile('digital','Digital / PC')}
-      ${tile('steam','Steam / PC')}
-      ${tile('ps1','PS1')}${tile('ps2','PS2')}${tile('ps3','PS3')}
-      ${tile('ps4','PS4')}${tile('ps5','PS5')}${tile('psp','PSP')}${tile('vita','PS Vita')}
-      ${tile('xbox360','Xbox 360')}${tile('xboxone','Xbox One')}${tile('xboxsx','Series X')}
-      ${tile('snes','SNES')}${tile('n64','N64')}${tile('gamecube','GameCube')}
-      ${tile('wii','Wii')}${tile('wiiu','Wii U')}${tile('switch','Switch')}
-      ${tile('gameboy','Game Boy')}${tile('gba','GBA')}${tile('ds','DS')}${tile('3ds','3DS')}
-      ${tile('megadrive','Mega Drive')}${tile('saturn','Saturn')}${tile('dreamcast','Dreamcast')}${tile('atari','Atari')}
-    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;margin-bottom:40px">${tiles}</div>
   </div>`;
   
   document.body.appendChild(overlay);
 }
 
-function toggleGameSetting(id,el){
+function toggleGameSetting(id){
   const cons=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
   cons[id]=cons[id]===true?false:true;
   localStorage.setItem('filmothek_consoles',JSON.stringify(cons));
   const isOn=cons[id]===true;
-  const dot=el.querySelector('div[style*="border-radius:50%"]');
-  if(dot){
-    dot.style.borderColor=isOn?'var(--accent-green)':'var(--text-muted)';
-    dot.style.background=isOn?'var(--accent-green)':'transparent';
+  const tile=document.querySelector('[data-platid="'+id+'"]');
+  if(tile){
+    tile.style.borderColor=isOn?'var(--accent-green)':'var(--border)';
+    const dot=tile.querySelector('[data-dot]');
+    if(dot){
+      dot.style.borderColor=isOn?'var(--accent-green)':'var(--text-muted)';
+      dot.style.background=isOn?'var(--accent-green)':'transparent';
+    }
   }
-  el.style.borderColor=isOn?'var(--accent-green)':'var(--border)';
 }
 function removeFromReview(id){
   let rl=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
