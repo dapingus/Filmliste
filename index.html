@@ -326,7 +326,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         </button>
       </div>
     </div>
-    <div style="padding:0 76px 0 20px">
+    <div id="sortSearchRow" style="padding:0 76px 0 20px">
       <!-- Row 5: Sort left ... Random + Search + Clear right -->
       <div style="display:flex;align-items:center;margin-bottom:14px;gap:8px">
         <button onclick="document.getElementById('sortMenu').style.display='block'" style="display:flex;align-items:center;gap:6px;padding:12px 20px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;flex-shrink:0">☰ <span id="sortLabel">A → Z</span></button>
@@ -523,30 +523,25 @@ async function performSearch(q){
       return `<div class="movie-card" onclick="openGameDetail(${g.id})"><div class="movie-poster">${g.background_image?`<img src="${g.background_image}" alt="${g.name}" loading="lazy" style="object-position:center top">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;padding:8px;text-align:center">${g.name}</div>`}${g.rating?`<div class="rating-badge">★ ${g.rating.toFixed(1)}</div>`:''}<div class="type-badge" style="background:rgba(76,175,80,0.85)">SPIEL</div></div><div class="movie-info"><div class="movie-title-text" style="display:flex;align-items:center">${g.name}${dot}</div><div class="movie-year">${yr}</div></div></div>`;
     }).join('')}</div>`}
   
-  // Music search via Deezer (with CORS proxy fallback)
+  // Music search via Deezer
   let musicResults=[];
   try{
-    let dzRes;
-    try{
-      dzRes=await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=8`);
-    }catch(e){
-      // CORS blocked - try proxy
-      dzRes=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.deezer.com/search/album?q='+encodeURIComponent(q)+'&limit=8'));
-    }
-    const dzData=await dzRes.json();
-    if(dzData.data)musicResults=dzData.data;
+    const dzRes=await fetch('https://api.deezer.com/search/album?q='+encodeURIComponent(q)+'&limit=8');
+    if(dzRes.ok){const dzData=await dzRes.json();if(dzData.data)musicResults=dzData.data}
   }catch(e){
-    // Fallback to MusicBrainz if Deezer fails completely
+    // Deezer blocked by CORS - try MusicBrainz fallback
     try{
-      const mbRes=await fetch(`https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=8`,{headers:{'User-Agent':'PingusList/1.0'}});
-      const mbData=await mbRes.json();
-      if(mbData['release-groups']){
-        musicResults=mbData['release-groups'].map(rg=>({
-          id:rg.id,title:rg.title,
-          artist:{name:(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ')},
-          cover_medium:`https://coverartarchive.org/release-group/${rg.id}/front-250`,
-          _isMB:true
-        }));
+      const mbRes=await fetch('https://musicbrainz.org/ws/2/release-group?query='+encodeURIComponent(q)+'&type=album&fmt=json&limit=8',{headers:{'User-Agent':'PingusList/1.0'}});
+      if(mbRes.ok){
+        const mbData=await mbRes.json();
+        if(mbData['release-groups']){
+          musicResults=mbData['release-groups'].map(rg=>({
+            id:rg.id,title:rg.title,
+            artist:{name:(rg['artist-credit']||[]).map(a=>a.name||a.artist?.name).join(', ')},
+            cover_medium:'https://coverartarchive.org/release-group/'+rg.id+'/front-250',
+            _isMB:true
+          }));
+        }
       }
     }catch(e2){}
   }
@@ -574,8 +569,8 @@ async function openDeezerAlbum(albumId){
   
   let album;
   try{
-    let res;try{res=await fetch('https://api.deezer.com/album/'+albumId)}catch(e){res=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.deezer.com/album/'+albumId))}
-    album=await res.json();
+    let res;try{res=await fetch('https://api.deezer.com/album/'+albumId)}catch(e){modal.classList.remove('open');return}
+    if(!res||!res.ok){modal.classList.remove('open');return}    album=await res.json();
   }catch(e){}
   if(!album||album.error){modal.classList.remove('open');return}
   
@@ -676,8 +671,7 @@ function addDeezerMusic(albumId,category,btn){
   const musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
   const mid='dz_'+albumId;
   
-  fetch('https://api.deezer.com/album/'+albumId).catch(()=>fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.deezer.com/album/'+albumId)))
-    .then(r=>r.json()).then(album=>{
+  fetch('https://api.deezer.com/album/'+albumId).then(r=>r.json()).then(album=>{
       musicCol[mid]={
         id:mid,dzId:albumId,title:album.title,artist:album.artist?.name||'',
         year:(album.release_date||'').split('-')[0],
@@ -1260,7 +1254,7 @@ function renderCollection(f='all'){
 
   grid.style.display='none';seriesList.style.display='none';gamesView.style.display='none';
   // Show/hide sort row
-  const sortRow=document.querySelector('[style*="padding:0 76px"]');
+  const sortRow=document.getElementById('sortSearchRow');
   if(sortRow)sortRow.style.display=collectionMode==='news'?'none':'';
   const counterNum=document.getElementById('counterNumber');
   const counterLbl=document.getElementById('counterLabel');
@@ -2514,9 +2508,6 @@ async function processVoice(text){
 // ===== NEWS FEED =====
 async function loadNewsFeed(){
   const gv=document.getElementById('gamesView');
-  // Hide sort row
-  const sortRow=document.querySelector('[style*="padding:0 76px"]');
-  if(sortRow)sortRow.style.display='none';
   
   let sections=[];
   
