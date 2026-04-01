@@ -1863,6 +1863,19 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 currentTab='collection';collectionMode='movies';
 applyCategoryVisibility();
 renderCollection('seen');
+
+// Auto-fullscreen for PWA: trigger real fullscreen on first touch
+if(window.matchMedia('(display-mode: fullscreen)').matches||window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone){
+  let fsTriggered=false;
+  document.addEventListener('touchstart',function autoFS(){
+    if(fsTriggered)return;
+    fsTriggered=true;
+    const el=document.documentElement;
+    if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
+    else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+    document.removeEventListener('touchstart',autoFS);
+  },{once:true});
+}
 </script>
 </body>
 </html>
