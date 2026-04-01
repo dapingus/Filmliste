@@ -530,12 +530,12 @@ async function performSearch(q){
   let musicResults=[];
   try{
     // Search artist first
-    var lfRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.search&artist='+encodeURIComponent(q)+'&api_key=4cb074e4b8771f9801e947498f89b4e5&format=json&limit=1');
+    var lfRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.search&artist='+encodeURIComponent(q)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=1');
     var lfData=await lfRes.json();
     var foundArtist=lfData?.results?.artistmatches?.artist?.[0]?.name;
     if(foundArtist){
       // Get top albums for this artist
-      var albRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(foundArtist)+'&api_key=4cb074e4b8771f9801e947498f89b4e5&format=json&limit=10');
+      var albRes=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(foundArtist)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=10');
       var albData=await albRes.json();
       if(albData?.topalbums?.album){
         musicResults=albData.topalbums.album.filter(function(a){return a.name!=='(null)'&&a.name}).map(function(a){
@@ -546,7 +546,7 @@ async function performSearch(q){
     }
     // Also search albums directly
     if(musicResults.length<3){
-      var albRes2=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.search&album='+encodeURIComponent(q)+'&api_key=4cb074e4b8771f9801e947498f89b4e5&format=json&limit=6');
+      var albRes2=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.search&album='+encodeURIComponent(q)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=6');
       var albData2=await albRes2.json();
       if(albData2?.results?.albummatches?.album){
         var existing=new Set(musicResults.map(function(m){return m.title+m.artist?.name}));
@@ -667,7 +667,7 @@ async function openMusicDetailLFM(artist,album){
   var modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
   modal.classList.add('open');content.innerHTML='<div class="loading" style="min-height:100vh;align-items:center"><div class="spinner"></div></div>';
   try{
-    var res=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(album)+'&api_key=4cb074e4b8771f9801e947498f89b4e5&format=json');
+    var res=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(album)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
     var data=await res.json();
     var alb=data?.album;
     if(!alb){modal.classList.remove('open');return}
