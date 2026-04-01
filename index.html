@@ -441,9 +441,9 @@ let currentTab='home',searchTimeout=null,collectionMode='movies';
 
 function save(){localStorage.setItem('filmothek_collection',JSON.stringify(collection));localStorage.setItem('filmothek_series',JSON.stringify(seriesCollection))}
 function getMovieData(id){return collection[id]||{seen:false,watchlist:false,rating:0}}
-function setMovieData(id,d){collection[id]={...getMovieData(id),...d,movieInfo:d.movieInfo||collection[id]?.movieInfo};save()}
+function setMovieData(id,d){collection[id]={...getMovieData(id),...d,movieInfo:d.movieInfo||collection[id]?.movieInfo,lastModified:Date.now()};save()}
 function getSeriesData(id){return seriesCollection[id]||{watchlist:false,rating:0,episodes:{}}}
-function setSeriesData(id,d){seriesCollection[id]={...getSeriesData(id),...d,seriesInfo:d.seriesInfo||seriesCollection[id]?.seriesInfo};save()}
+function setSeriesData(id,d){seriesCollection[id]={...getSeriesData(id),...d,seriesInfo:d.seriesInfo||seriesCollection[id]?.seriesInfo,lastModified:Date.now()};save()}
 
 async function tmdbFetch(ep,p={}){const u=new URL(`${TMDB_BASE}${ep}`);u.searchParams.set('api_key',TMDB_KEY);u.searchParams.set('language','de-DE');Object.entries(p).forEach(([k,v])=>u.searchParams.set(k,v));try{const r=await fetch(u);if(!r.ok)throw 0;return await r.json()}catch(e){return null}}
 async function searchMovies(q){return tmdbFetch('/search/movie',{query:q})}
@@ -1373,14 +1373,102 @@ function importData(e){
   reader.onload=ev=>{
     try{
       const data=JSON.parse(ev.target.result);
-      if(data.movies)collection=data.movies;
-      if(data.series)seriesCollection=data.series;
-      if(data.review)localStorage.setItem('filmothek_review',JSON.stringify(data.review));
-      if(data.categories)localStorage.setItem('filmothek_categories',JSON.stringify(data.categories));
-      if(data.games)localStorage.setItem('filmothek_games',JSON.stringify(data.games));
-      if(data.consoles)localStorage.setItem('filmothek_consoles',JSON.stringify(data.consoles));
+      let addedM=0,updatedM=0,addedS=0,updatedS=0,addedG=0;
+      
+      // Smart merge movies
+      if(data.movies){
+        Object.entries(data.movies).forEach(([id,imported])=>{
+          if(!collection[id]){
+            collection[id]=imported;addedM++;
+          }else{
+            const local=collection[id];
+            const localTime=local.lastModified||0;
+            const importTime=imported.lastModified||0;
+            if(importTime>localTime){
+              // Imported is newer - take its values
+              local.rating=imported.rating||0;
+              local.seen=!!imported.seen;
+              local.watchlist=!!imported.watchlist;
+              local.favorite=!!imported.favorite;
+              local.lastModified=importTime;
+            }
+            // Always merge these additively
+            if(imported.genres&&!local.genres)local.genres=imported.genres;
+            if(!local.movieInfo&&imported.movieInfo)local.movieInfo=imported.movieInfo;
+            updatedM++;
+          }
+        });
+      }
+      
+      // Smart merge series
+      if(data.series){
+        Object.entries(data.series).forEach(([id,imported])=>{
+          if(!seriesCollection[id]){
+            seriesCollection[id]=imported;addedS++;
+          }else{
+            const local=seriesCollection[id];
+            const localTime=local.lastModified||0;
+            const importTime=imported.lastModified||0;
+            if(importTime>localTime){
+              local.rating=imported.rating||0;
+              local.watchlist=!!imported.watchlist;
+              local.favorite=!!imported.favorite;
+              local.lastModified=importTime;
+            }
+            if(imported.genres&&!local.genres)local.genres=imported.genres;
+            if(!local.seriesInfo&&imported.seriesInfo)local.seriesInfo=imported.seriesInfo;
+            // Episodes: always merge - keep all watched from both sides
+            if(imported.episodes){
+              if(!local.episodes)local.episodes={};
+              Object.entries(imported.episodes).forEach(([k,v])=>{
+                if(v)local.episodes[k]=true;
+              });
+            }
+            updatedS++;
+          }
+        });
+      }
+      
+      // Smart merge games
+      if(data.games){
+        const gamesCol=JSON.parse(localStorage.getItem('filmothek_games')||'{}');
+        Object.entries(data.games).forEach(([id,imported])=>{
+          if(!gamesCol[id]){gamesCol[id]=imported;addedG++}
+        });
+        localStorage.setItem('filmothek_games',JSON.stringify(gamesCol));
+      }
+      
+      // Merge review list (add missing, no duplicates)
+      if(data.review){
+        const localReview=JSON.parse(localStorage.getItem('filmothek_review')||'[]');
+        const localIds=new Set(localReview.map(m=>m.id));
+        const newReviews=data.review.filter(m=>!localIds.has(m.id));
+        if(newReviews.length){
+          localStorage.setItem('filmothek_review',JSON.stringify([...localReview,...newReviews]));
+        }
+      }
+      
+      // Merge categories and consoles (keep enabled if either has it enabled)
+      if(data.categories){
+        const cats=JSON.parse(localStorage.getItem('filmothek_categories')||'{}');
+        Object.entries(data.categories).forEach(([k,v])=>{if(v!==false)cats[k]=true});
+        localStorage.setItem('filmothek_categories',JSON.stringify(cats));
+      }
+      if(data.consoles){
+        const cons=JSON.parse(localStorage.getItem('filmothek_consoles')||'{}');
+        Object.entries(data.consoles).forEach(([k,v])=>{if(v!==false)cons[k]=true});
+        localStorage.setItem('filmothek_consoles',JSON.stringify(cons));
+      }
+      
       save();
-      showToast(`Import erfolgreich! (${data.exportDate||'unbekannt'})`);
+      const parts=[];
+      if(addedM)parts.push(`${addedM} neue Filme`);
+      if(updatedM)parts.push(`${updatedM} Filme aktualisiert`);
+      if(addedS)parts.push(`${addedS} neue Serien`);
+      if(updatedS)parts.push(`${updatedS} Serien aktualisiert`);
+      if(addedG)parts.push(`${addedG} neue Spiele`);
+      const msg=parts.length?parts.join(', '):'Alles schon vorhanden';
+      showToast(`✓ Import: ${msg} (${data.exportDate||''})`);
       renderCollection('seen');
     }catch(err){showToast('Fehler beim Import!')}
   };
