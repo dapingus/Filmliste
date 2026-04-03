@@ -649,8 +649,8 @@ window._mClick=function(i){
   if(m.artist&&m.title)openMusicDetailLFM(m.artist,m.title);
 };
 
-function openMus(i){var m=window._mus[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}
-function openMusSearch(i){var m=window._mSearch[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}
+function openMus(i){try{var m=window._mus[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMus: '+e.message)}}
+function openMusSearch(i){try{var m=window._mSearch[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMusSearch: '+e.message)}}
 
 function openMusicFromB64(a,t){
   try{openMusicDetailLFM(decodeURIComponent(atob(a)),decodeURIComponent(atob(t)))}catch(e){console.log('Music click error:',e)}
@@ -699,7 +699,37 @@ async function openMusicDetailLFM(artist,album){
     var res=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(album)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
     var data=await res.json();
     var alb=data?.album;
-    if(!alb){modal.classList.remove('open');return}
+    
+    // If album not found, try artist.getTopAlbums to find correct name
+    if(!alb){
+      var res2=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(artist)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=20');
+      var data2=await res2.json();
+      var albums=data2?.topalbums?.album||[];
+      var match=albums.find(function(a){return(a.name||'').toLowerCase()===album.toLowerCase()});
+      if(match){
+        // Retry with correct name
+        var res3=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(match.name)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
+        var data3=await res3.json();
+        alb=data3?.album;
+      }
+    }
+    
+    // Still not found - show basic info
+    if(!alb){
+      var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+      var mid='';
+      Object.keys(musicCol).forEach(function(k){
+        var e=musicCol[k];
+        if((e.title||'').toLowerCase()===album.toLowerCase()&&(e.artist||'').toLowerCase()===artist.toLowerCase()) mid=k;
+      });
+      var isAdded=!!mid;
+      var mData=isAdded?musicCol[mid]:{};
+      var addBtns=isAdded?
+        '<div style="font-size:13px;color:var(--accent-green);margin-bottom:12px">✓ In deiner Sammlung</div>'
+        :'<div class="action-row" style="margin-bottom:12px"><button onclick="addMusicLFM(\''+artist.replace(/'/g,"\\'")+'\',\''+album.replace(/'/g,"\\'")+'\',\'\',\'album\',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button><button onclick="addMusicLFM(\''+artist.replace(/'/g,"\\'")+'\',\''+album.replace(/'/g,"\\'")+'\',\'\',\'soundtrack\',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button></div>';
+      content.innerHTML='<div class="modal-backdrop"><button class="modal-close" onclick="closeModal()">✕</button></div><div class="modal-body"><div class="modal-movie-title">'+album+'</div><div class="modal-meta"><span>'+artist+'</span></div>'+addBtns+'</div>';
+      return;
+    }
     
     var title=alb.name||'';
     var art=alb.artist||artist;
