@@ -693,10 +693,29 @@ function showSavedMusicDetail(m){
   window._currentMusicId=mid;
   window._currentMusicData=m;
   
-  // Load tracks in background
+  // Load tracks and cover in background
   fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(m.artist||'')+'&album='+encodeURIComponent(m.title||'')+'&autocorrect=1&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json')
     .then(function(r){return r.json()}).then(function(data){
       var alb=data?.album;
+      if(!alb)return;
+      // Update cover if we got a better one
+      var img=alb.image?alb.image.find(function(i){return i.size==='mega'})||alb.image.find(function(i){return i.size==='extralarge'})||alb.image[alb.image.length-1]:null;
+      var newCover=img?img['#text']:'';
+      if(newCover&&newCover.length>10){
+        // Update backdrop
+        var backdrop=modal.querySelector('.modal-backdrop img');
+        if(backdrop)backdrop.src=newCover;
+        else{
+          var bd=modal.querySelector('.modal-backdrop');
+          if(bd){var im=document.createElement('img');im.src=newCover;im.style.cssText='width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)';bd.insertBefore(im,bd.firstChild)}
+        }
+        // Save cover to storage
+        if(mid){
+          var mc=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+          if(mc[mid]&&(!mc[mid].cover||mc[mid].cover.length<10)){mc[mid].cover=newCover;localStorage.setItem('filmothek_music',JSON.stringify(mc))}
+        }
+      }
+      // Update tracks
       var el=document.getElementById('musicTrackList');
       if(!el)return;
       if(alb&&alb.tracks){
