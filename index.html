@@ -2954,94 +2954,141 @@ async function processVoice(text){
 async function loadNewsFeed(){
   var nc=document.getElementById('newsContent');
   if(!nc)return;
-  
   var html='';
   
-  // 1. Kinofilme
+  html+='<div style="text-align:center;padding:8px 0 20px"><div style="font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--gold);letter-spacing:1px">PINGUS MAGAZIN</div><div style="width:60px;height:2px;background:var(--gold);margin:8px auto 0"></div></div>';
+  
   try{
     var r=await fetch('https://api.themoviedb.org/3/movie/now_playing?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE&region=DE');
     var d=await r.json();
     if(d.results&&d.results.length>0){
       var h=d.results[0];
-      html+='<div onclick="openMovieDetail('+h.id+')" style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:20px;cursor:pointer;height:200px">';
-      html+='<img src="'+posterUrl(h.backdrop_path||h.poster_path,'w780')+'" style="width:100%;height:100%;object-fit:cover">';
-      html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.9) 0%,transparent 60%)"></div>';
-      html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:16px">';
-      html+='<div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:4px">Jetzt im Kino</div>';
-      html+='<div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:white;line-height:1.2">'+h.title+'</div>';
+      html+='<div onclick="openMovieDetail('+h.id+')" style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;cursor:pointer">';
+      html+='<img src="'+posterUrl(h.backdrop_path||h.poster_path,'w780')+'" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block">';
+      html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.3) 40%,transparent 70%)"></div>';
+      html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:20px 16px">';
+      html+='<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:var(--gold);color:#000;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Jetzt im Kino</div>';
+      html+='<div style="font-family:var(--font-display);font-size:22px;font-weight:900;color:white;line-height:1.2;margin-bottom:4px">'+h.title+'</div>';
+      if(h.overview)html+='<div style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+h.overview+'</div>';
       html+='</div></div>';
-      html+=buildCarousel('Aktuell im Kino','🎬',d.results.slice(1,10),'movie');
+      if(d.results.length>2){
+        html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px">';
+        for(var i=1;i<3;i++){
+          var m=d.results[i];
+          html+='<div onclick="openMovieDetail('+m.id+')" style="position:relative;border-radius:12px;overflow:hidden;cursor:pointer">';
+          html+='<img src="'+posterUrl(m.backdrop_path||m.poster_path,'w500')+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block">';
+          html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.9) 0%,transparent 50%)"></div>';
+          html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:10px"><div style="font-family:var(--font-display);font-size:13px;font-weight:800;color:white;line-height:1.2">'+m.title+'</div></div></div>';
+        }
+        html+='</div>';
+      }
+      if(d.results.length>3) html+=buildMagC('Weitere Kinofilme',d.results.slice(3,12),'movie');
     }
-  }catch(e){console.log('News Kino error:',e)}
+  }catch(e){}
   
-  // 2. Demnächst
+  html+='<div style="height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);margin:8px 0 20px"></div>';
+  
   try{
-    const r=await fetch('https://api.themoviedb.org/3/movie/upcoming?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE&region=DE');
-    const d=await r.json();
-    if(d.results&&d.results.length>0) html+=buildCarousel('Demnächst','🎟️',d.results.slice(0,10),'movie');
-  }catch(e){console.log('News Upcoming error:',e)}
+    var r2=await fetch('https://api.themoviedb.org/3/movie/upcoming?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE&region=DE');
+    var d2=await r2.json();
+    if(d2.results&&d2.results.length>0) html+=buildMagC('Demnachst im Kino',d2.results.slice(0,12),'movie');
+  }catch(e){}
   
-  // 3. Serien Trend
+  html+='<div style="height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);margin:8px 0 20px"></div>';
+  
   try{
-    const r=await fetch('https://api.themoviedb.org/3/trending/tv/week?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE');
-    const d=await r.json();
-    if(d.results&&d.results.length>0) html+=buildCarousel('Serien im Trend','🔥',d.results.slice(0,10),'tv');
-  }catch(e){console.log('News TV error:',e)}
+    var r3=await fetch('https://api.themoviedb.org/3/trending/tv/week?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE');
+    var d3=await r3.json();
+    if(d3.results&&d3.results.length>0){
+      var sv=d3.results[0];
+      html+='<div onclick="openSeriesDetail('+sv.id+')" style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;cursor:pointer">';
+      html+='<img src="'+posterUrl(sv.backdrop_path||sv.poster_path,'w780')+'" style="width:100%;aspect-ratio:21/9;object-fit:cover;display:block">';
+      html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.95) 0%,transparent 60%)"></div>';
+      html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:16px">';
+      html+='<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:#e04060;color:white;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Serie der Woche</div>';
+      html+='<div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:white;line-height:1.2">'+sv.name+'</div>';
+      html+='</div></div>';
+      if(d3.results.length>2){
+        html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">';
+        for(var si=1;si<3;si++){
+          var s=d3.results[si];
+          html+='<div onclick="openSeriesDetail('+s.id+')" style="position:relative;border-radius:12px;overflow:hidden;cursor:pointer">';
+          html+='<img src="'+posterUrl(s.backdrop_path||s.poster_path,'w500')+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block">';
+          html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.9) 0%,transparent 50%)"></div>';
+          html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:10px"><div style="font-family:var(--font-display);font-size:13px;font-weight:800;color:white;line-height:1.2">'+s.name+'</div></div></div>';
+        }
+        html+='</div>';
+      }
+      if(d3.results.length>3) html+=buildMagC('Weitere Serien',d3.results.slice(3,12),'tv');
+    }
+  }catch(e){}
   
-  // 4. Neue Folgen
   try{
-    const r=await fetch('https://api.themoviedb.org/3/tv/on_the_air?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE');
-    const d=await r.json();
-    if(d.results&&d.results.length>0) html+=buildCarousel('Neue Folgen','📡',d.results.slice(0,10),'tv');
-  }catch(e){console.log('News OnAir error:',e)}
+    var r4=await fetch('https://api.themoviedb.org/3/tv/on_the_air?api_key=2dca580c2a14b55200e784d157207b4d&language=de-DE');
+    var d4=await r4.json();
+    if(d4.results&&d4.results.length>0) html+=buildMagC('Neue Folgen',d4.results.slice(0,12),'tv');
+  }catch(e){}
   
-  // 5. Spiele
+  html+='<div style="height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);margin:8px 0 20px"></div>';
+  
   try{
     var today=new Date().toISOString().split('T')[0];
     var future=new Date(Date.now()+90*86400000).toISOString().split('T')[0];
-    const r=await fetch('https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&dates='+today+','+future+'&ordering=-added&page_size=10');
-    const d=await r.json();
-    if(d.results&&d.results.length>0){
-      var gameCards='';
-      for(var i=0;i<d.results.length;i++){
-        var g=d.results[i];
-        var pl=(g.platforms||[]).map(function(p){return p.platform.name}).slice(0,3).join(', ');
-        gameCards+='<div onclick="openGameDetail('+g.id+')" style="flex-shrink:0;width:200px;cursor:pointer">';
-        gameCards+='<div style="width:200px;height:112px;border-radius:12px;overflow:hidden;margin-bottom:8px;background:var(--bg-card)">';
-        if(g.background_image) gameCards+='<img src="'+g.background_image+'" style="width:100%;height:100%;object-fit:cover">';
-        else gameCards+='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px">🎮</div>';
-        gameCards+='</div>';
-        gameCards+='<div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3;margin-bottom:2px">'+g.name+'</div>';
-        gameCards+='<div style="font-size:11px;color:var(--text-muted)">'+pl+'</div></div>';
+    var r5=await fetch('https://api.rawg.io/api/games?key=0456e26e4378414398fa767657c083ea&dates='+today+','+future+'&ordering=-added&page_size=10');
+    var d5=await r5.json();
+    if(d5.results&&d5.results.length>0){
+      var sg=d5.results[0];
+      html+='<div onclick="openGameDetail('+sg.id+')" style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;cursor:pointer">';
+      if(sg.background_image)html+='<img src="'+sg.background_image+'" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">';
+      html+='<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.95) 0%,transparent 60%)"></div>';
+      html+='<div style="position:absolute;bottom:0;left:0;right:0;padding:16px">';
+      html+='<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:var(--accent-green);color:#000;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Neues Spiel</div>';
+      html+='<div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:white;line-height:1.2">'+sg.name+'</div>';
+      var sgp=(sg.platforms||[]).map(function(p){return p.platform.name}).slice(0,4).join(' · ');
+      if(sgp)html+='<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px">'+sgp+'</div>';
+      html+='</div></div>';
+      if(d5.results.length>1){
+        html+='<div style="margin-bottom:28px"><div style="font-family:var(--font-display);font-size:16px;color:var(--gold);margin-bottom:12px">Weitere neue Spiele</div>';
+        html+='<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch">';
+        for(var gi=1;gi<d5.results.length;gi++){
+          var g=d5.results[gi];
+          var gpl=(g.platforms||[]).map(function(p){return p.platform.name}).slice(0,3).join(', ');
+          html+='<div onclick="openGameDetail('+g.id+')" style="flex-shrink:0;width:180px;cursor:pointer">';
+          html+='<div style="width:180px;height:100px;border-radius:10px;overflow:hidden;margin-bottom:6px;background:var(--bg-card)">';
+          if(g.background_image)html+='<img src="'+g.background_image+'" style="width:100%;height:100%;object-fit:cover">';
+          else html+='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px">🎮</div>';
+          html+='</div>';
+          html+='<div style="font-size:12px;font-weight:700;color:var(--text-primary);line-height:1.3;margin-bottom:2px">'+g.name+'</div>';
+          html+='<div style="font-size:10px;color:var(--text-muted)">'+gpl+'</div></div>';
+        }
+        html+='</div></div>';
       }
-      html+='<div style="margin-bottom:28px"><div style="font-family:var(--font-display);font-size:18px;color:var(--gold);margin-bottom:14px">🎮 Neue Spiele</div>';
-      html+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch">'+gameCards+'</div></div>';
     }
-  }catch(e){console.log('News Games error:',e)}
+  }catch(e){}
   
-  if(!html) html='<div style="color:var(--text-muted)">Keine News verfügbar. Internet prüfen.</div>';
-  
+  html+='<div style="text-align:center;padding:20px 0 40px;color:var(--text-muted);font-size:11px">Powered by TMDB · RAWG · Last.fm</div>';
+  if(!html||html.length<200) html='<div style="color:var(--text-muted);text-align:center;padding:40px">Keine News verfugbar.</div>';
   nc.innerHTML=html;
 }
 
-function buildCarousel(heading,icon,items,type){
+function buildMagC(heading,items,type){
   if(!items||!items.length)return'';
-  var h='<div style="margin-bottom:28px">';
-  h+='<div style="font-family:var(--font-display);font-size:18px;color:var(--gold);margin-bottom:14px">'+icon+' '+heading+'</div>';
-  h+='<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch">';
+  var h='<div style="margin-bottom:20px">';
+  h+='<div style="font-family:var(--font-display);font-size:16px;color:var(--gold);margin-bottom:12px">'+heading+'</div>';
+  h+='<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch">';
   for(var i=0;i<items.length;i++){
     var m=items[i];
     var t=m.title||m.name||'';
     var dt=m.release_date||m.first_air_date||'';
     var ds=dt?new Date(dt).toLocaleDateString('de-DE',{day:'numeric',month:'short'}):'';
     var click=type==='tv'?'openSeriesDetail('+m.id+')':'openMovieDetail('+m.id+')';
-    h+='<div onclick="'+click+'" style="flex-shrink:0;width:120px;cursor:pointer">';
-    h+='<div style="width:120px;height:180px;border-radius:10px;overflow:hidden;margin-bottom:8px;background:var(--bg-card)">';
-    if(m.poster_path) h+='<img src="'+posterUrl(m.poster_path,'w342')+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
+    h+='<div onclick="'+click+'" style="flex-shrink:0;width:110px;cursor:pointer">';
+    h+='<div style="width:110px;height:165px;border-radius:8px;overflow:hidden;margin-bottom:6px;background:var(--bg-card);border:1px solid var(--border)">';
+    if(m.poster_path)h+='<img src="'+posterUrl(m.poster_path,'w342')+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
     else h+='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:10px;text-align:center;padding:4px">'+t+'</div>';
     h+='</div>';
-    h+='<div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+t+'</div>';
-    h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px">'+ds+'</div>';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--text-primary);line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+t+'</div>';
+    h+='<div style="font-size:9px;color:var(--text-muted);margin-top:2px">'+ds+'</div>';
     h+='</div>';
   }
   h+='</div></div>';
