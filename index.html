@@ -651,7 +651,114 @@ window._mClick=function(i){
   if(m.artist&&m.title)openMusicDetailLFM(m.artist,m.title);
 };
 
-function openMus(i){try{var m=window._mus[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMus: '+e.message)}}
+function openMus(i){
+  try{
+    var m=window._mus[i];
+    if(!m)return;
+    // Show saved album detail directly - no Last.fm needed
+    showSavedMusicDetail(m);
+  }catch(e){alert('Fehler: '+e.message)}
+}
+
+function showSavedMusicDetail(m){
+  var modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
+  modal.classList.add('open');
+  
+  var mid='';
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  Object.keys(musicCol).forEach(function(k){if(musicCol[k]===m||((musicCol[k].title||'').toLowerCase()===(m.title||'').toLowerCase()&&(musicCol[k].artist||'').toLowerCase()===(m.artist||'').toLowerCase()))mid=k});
+  
+  var rating=m.userRating||0;
+  var fav=m.favorite||false;
+  var starHtml='';
+  for(var i=1;i<=10;i++){
+    starHtml+='<span class="star '+(rating>=i?'filled':'')+'" onclick="rateSavedMusic('+i+',this)" style="cursor:pointer">'+(rating>=i?'★':'☆')+'</span>';
+  }
+  starHtml+=rating?'<span class="star-rating-label">'+rating+'/10</span>':'';
+  starHtml+='<span onclick="toggleSavedMusicFav(this)" style="cursor:pointer;font-size:24px;margin-left:10px;color:'+(fav?'#e04060':'#555')+'">❤</span>';
+  
+  // Try to load tracks from Last.fm in background
+  var trackDiv='<div id="musicTrackList" style="margin-top:16px;color:var(--text-muted);font-size:12px">Lade Titel...</div>';
+  
+  content.innerHTML='<div class="modal-backdrop">'+(m.cover?'<img src="'+m.cover+'" style="width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)">':'')+'<button class="modal-close" onclick="closeModal()">✕</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="modal-movie-title">'+(m.title||'')+'</div>'
+    +'<div class="modal-meta"><span>'+(m.artist||'')+'</span>'+(m.year?'<span>'+m.year+'</span>':'')+'<span>'+(m.category==='soundtrack'?'Soundtrack':'Album')+'</span></div>'
+    +'<div class="star-rating">'+starHtml+'</div>'
+    +trackDiv
+    +'<div style="margin-top:20px"><button onclick="deleteSavedMusic();closeModal()" style="padding:10px 20px;border-radius:var(--radius);border:1.5px solid #c94040;background:transparent;color:#c94040;font-family:var(--font-body);font-size:13px;cursor:pointer">🗑️ Entfernen</button></div>'
+    +'</div>';
+  
+  // Store current music ID for rating/delete
+  window._currentMusicId=mid;
+  window._currentMusicData=m;
+  
+  // Load tracks in background
+  fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(m.artist||'')+'&album='+encodeURIComponent(m.title||'')+'&autocorrect=1&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json')
+    .then(function(r){return r.json()}).then(function(data){
+      var alb=data?.album;
+      var el=document.getElementById('musicTrackList');
+      if(!el)return;
+      if(alb&&alb.tracks){
+        var tracks=Array.isArray(alb.tracks.track)?alb.tracks.track:(alb.tracks.track?[alb.tracks.track]:[]);
+        if(tracks.length){
+          var h='<div style="font-family:var(--font-display);font-size:14px;color:var(--gold-dim);margin-bottom:8px">'+tracks.length+' Titel</div>';
+          for(var i=0;i<tracks.length;i++){
+            var t=tracks[i];
+            var dur=t.duration?Math.floor(t.duration/60)+':'+String(t.duration%60).padStart(2,'0'):'';
+            h+='<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text-muted);width:24px;text-align:right;flex-shrink:0">'+(i+1)+'</span><span style="color:var(--text-primary);flex:1">'+(t.name||'')+'</span><span style="color:var(--text-muted);font-size:11px">'+dur+'</span></div>';
+          }
+          el.innerHTML=h;
+        }else{el.innerHTML=''}
+      }else{el.innerHTML=''}
+    }).catch(function(){var el=document.getElementById('musicTrackList');if(el)el.innerHTML=''});
+}
+
+function rateSavedMusic(r,el){
+  var mid=window._currentMusicId;if(!mid)return;
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  if(!musicCol[mid])return;
+  musicCol[mid].userRating=musicCol[mid].userRating===r?0:r;
+  if(musicCol[mid].userRating<10)musicCol[mid].favorite=false;
+  musicCol[mid].lastModified=Date.now();
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  var rating=musicCol[mid].userRating;
+  var c=el.parentElement;
+  c.querySelectorAll('.star').forEach(function(s,i){s.classList.toggle('filled',i<rating);s.textContent=i<rating?'★':'☆'});
+  var l=c.querySelector('.star-rating-label');
+  if(rating){if(!l){l=document.createElement('span');l.className='star-rating-label';c.appendChild(l)}l.textContent=rating+'/10'}else if(l)l.remove();
+  var heart=c.querySelector('span[style*="font-size:24px"]');
+  if(heart)heart.style.color=musicCol[mid].favorite?'#e04060':'#555';
+  if(rating)showToast(rating+'/10');
+}
+
+function toggleSavedMusicFav(el){
+  var mid=window._currentMusicId;if(!mid)return;
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  if(!musicCol[mid])return;
+  musicCol[mid].favorite=!musicCol[mid].favorite;
+  if(musicCol[mid].favorite)musicCol[mid].userRating=10;
+  musicCol[mid].lastModified=Date.now();
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  el.style.color=musicCol[mid].favorite?'#e04060':'#555';
+  if(musicCol[mid].favorite){
+    showToast('❤ 10/10');
+    el.parentElement.querySelectorAll('.star').forEach(function(s){s.classList.add('filled');s.textContent='★'});
+    var l=el.parentElement.querySelector('.star-rating-label');
+    if(!l){l=document.createElement('span');l.className='star-rating-label';el.parentElement.insertBefore(l,el)}
+    l.textContent='10/10';
+  }else{showToast('Favorit entfernt')}
+}
+
+function deleteSavedMusic(){
+  var mid=window._currentMusicId;if(!mid)return;
+  var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
+  var title=musicCol[mid]?.title||'';
+  delete musicCol[mid];
+  localStorage.setItem('filmothek_music',JSON.stringify(musicCol));
+  showToast('"'+title+'" entfernt');
+  renderCollection(document.querySelector('#collectionFilters .filter-tab.active')?.dataset?.filter||'seen');
+}
 function openMusSearch(i){try{var m=window._mSearch[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMusSearch: '+e.message)}}
 function addMusicSimple(isST){
   var p=window._pendingMusic;if(!p)return;
