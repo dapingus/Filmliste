@@ -702,26 +702,26 @@ async function openMusicDetailLFM(artist,album){
   var modal=document.getElementById('movieModal'),content=document.getElementById('modalContent');
   modal.classList.add('open');content.innerHTML='<div class="loading" style="min-height:100vh;align-items:center"><div class="spinner"></div></div>';
   try{
-    var res=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(album)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
+    var res=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(album)+'&autocorrect=1&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
     var data=await res.json();
     var alb=data?.album;
     
-    // If album not found, try artist.getTopAlbums to find correct name
-    if(!alb){
-      var res2=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(artist)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=20');
+    // If album not found or error, try artist.getTopAlbums to find correct name
+    if(!alb||data?.error){
+      var res2=await fetch('https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist='+encodeURIComponent(artist)+'&autocorrect=1&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json&limit=30');
       var data2=await res2.json();
       var albums=data2?.topalbums?.album||[];
       var match=albums.find(function(a){return(a.name||'').toLowerCase()===album.toLowerCase()});
+      if(!match)match=albums.find(function(a){return(a.name||'').toLowerCase().includes(album.toLowerCase())||album.toLowerCase().includes((a.name||'').toLowerCase())});
       if(match){
-        // Retry with correct name
-        var res3=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(match.name)+'&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
+        var res3=await fetch('https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist='+encodeURIComponent(artist)+'&album='+encodeURIComponent(match.name)+'&autocorrect=1&api_key=05c1a98e9cd81d99dab62fe70a2fa261&format=json');
         var data3=await res3.json();
-        alb=data3?.album;
+        if(data3?.album&&!data3?.error)alb=data3.album;
       }
     }
     
-    // Still not found - show basic info
-    if(!alb){
+    // Still not found - show basic info with add buttons
+    if(!alb||data?.error){
       var musicCol=JSON.parse(localStorage.getItem('filmothek_music')||'{}');
       var mid='';
       Object.keys(musicCol).forEach(function(k){
