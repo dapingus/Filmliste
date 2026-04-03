@@ -653,6 +653,10 @@ window._mClick=function(i){
 
 function openMus(i){try{var m=window._mus[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMus: '+e.message)}}
 function openMusSearch(i){try{var m=window._mSearch[i];if(m)openMusicDetailLFM(m.artist||'',m.title||'')}catch(e){alert('Fehler openMusSearch: '+e.message)}}
+function addMusicSimple(isST){
+  var p=window._pendingMusic;if(!p)return;
+  addMusicLFM(p.artist,p.title,'',isST?'soundtrack':'album',{classList:{add:function(){}},set textContent(v){}});
+}
 
 function openMusicFromB64(a,t){
   try{openMusicDetailLFM(decodeURIComponent(atob(a)),decodeURIComponent(atob(t)))}catch(e){console.log('Music click error:',e)}
@@ -728,7 +732,8 @@ async function openMusicDetailLFM(artist,album){
       var mData=isAdded?musicCol[mid]:{};
       var addBtns=isAdded?
         '<div style="font-size:13px;color:var(--accent-green);margin-bottom:12px">✓ In deiner Sammlung</div>'
-        :'<div class="action-row" style="margin-bottom:12px"><button onclick="addMusicLFM(\''+artist.replace(/'/g,"\\'")+'\',\''+album.replace(/'/g,"\\'")+'\',\'\',\'album\',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button><button onclick="addMusicLFM(\''+artist.replace(/'/g,"\\'")+'\',\''+album.replace(/'/g,"\\'")+'\',\'\',\'soundtrack\',this)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button></div>';
+        :'<div class="action-row" style="margin-bottom:12px"><button onclick="addMusicSimple()" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button><button onclick="addMusicSimple(true)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button></div>';
+      window._pendingMusic={artist:artist,title:album};
       content.innerHTML='<div class="modal-backdrop"><button class="modal-close" onclick="closeModal()">✕</button></div><div class="modal-body"><div class="modal-movie-title">'+album+'</div><div class="modal-meta"><span>'+artist+'</span></div>'+addBtns+'</div>';
       return;
     }
@@ -787,7 +792,12 @@ async function openMusicDetailLFM(artist,album){
     if(isAdded) deleteBtn='<div style="margin-top:20px"><button onclick="deleteMusic(\''+saveId.replace(/'/g,"\\'")+'\');closeModal()" style="padding:10px 20px;border-radius:var(--radius);border:1.5px solid #c94040;background:transparent;color:#c94040;font-family:var(--font-body);font-size:13px;cursor:pointer">🗑️ Entfernen</button></div>';
     
     content.innerHTML='<div class="modal-backdrop">'+(cover?'<img src="'+cover+'" style="width:100%;height:100%;object-fit:cover;opacity:0.3;filter:blur(12px) brightness(0.4)">':'')+'<button class="modal-close" onclick="closeModal()">✕</button></div><div class="modal-body"><div class="modal-movie-title">'+title+'</div><div class="modal-meta"><span>'+art+'</span>'+tags.slice(0,3).map(function(t){return '<span class="tag">'+t+'</span>'}).join('')+'</div>'+(isAdded?'<div class="star-rating">'+starHtml+'</div>':'')+addArea+trackHtml+deleteBtn+'</div>';
-  }catch(e){console.log('LFM detail error:',e);modal.classList.remove('open')}
+  }catch(e){
+    console.log('LFM detail error:',e);
+    // Show error instead of closing modal
+    content.innerHTML='<div class="modal-backdrop"><button class="modal-close" onclick="closeModal()">✕</button></div><div class="modal-body"><div class="modal-movie-title">'+(album||'')+'</div><div class="modal-meta"><span>'+(artist||'')+'</span></div><div style="color:var(--text-muted);margin:16px 0">Album konnte nicht geladen werden.</div><div class="action-row" style="margin-bottom:12px"><button onclick="addMusicSimple()" class="action-btn" style="font-size:13px;padding:10px 20px">+ Album</button><button onclick="addMusicSimple(true)" class="action-btn" style="font-size:13px;padding:10px 20px">+ Soundtrack</button></div></div>';
+    window._pendingMusic={artist:artist,title:album};
+  }
 }
 
 function addMusicLFM(artist,title,cover,category,btn){
